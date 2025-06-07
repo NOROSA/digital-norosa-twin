@@ -3,7 +3,7 @@
 
 import os
 from openai import AsyncOpenAI
-from agents import Agent, Runner, function_tool, OpenAIChatCompletionModel   # ← OBJETO DEL SDK
+from agents import Agent, Runner, function_tool, OpenAIChatCompletionsModel   # ← OBJETO DEL SDK
 from agent.cv_loader import load_cv
 
 # 1. CV en memoria -----------------------------------------------------------------
@@ -22,7 +22,7 @@ client_ds = AsyncOpenAI(
 )
 
 # 3. Modelo chat-completion explícito ----------------------------------------------
-chat_model = OpenAIChatCompletionModel(  # ← siempre usa /chat/completions
+chat_model = OpenAIChatCompletionsModel(  # ← siempre usa /chat/completions
     model="deepseek-chat",
     client=client_ds,
 )
