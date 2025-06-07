@@ -1,0 +1,17 @@
+# 🤖 Digital Twin Bot - Dependencias con DeepSeek
+
+# CrewAI Framework
+crewai==0.74.0
+
+# Telegram Bot
+python-telegram-bot==20.8
+
+# FastAPI para Railway
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+
+# DeepSeek API (compatible con OpenAI)
+openai==1.40.6
+
+# Utilidades básicas
+python-dotenv==1.0.0
