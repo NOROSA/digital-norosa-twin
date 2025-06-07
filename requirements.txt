@@ -1,10 +1,10 @@
-# 🤖 NUCLEAR OPTION - CrewAI + Fix Python 3.12
+# 🤖 CrewAI DEFINITIVO - Versión que SÍ existe y funciona
 
-# Sistema base para Python 3.12 (sin distutils que no existe)
-setuptools>=60.0.0
+# Python base
+setuptools==69.0.3
 
-# CrewAI FUNCIONAL - versión que SÍ compila
-crewai==0.45.0
+# CrewAI - VERSIÓN QUE SÍ EXISTE (última estable)
+crewai==0.126.0
 
 # Telegram Bot
 python-telegram-bot==20.6
@@ -13,20 +13,8 @@ python-telegram-bot==20.6
 fastapi==0.100.1
 uvicorn==0.23.0
 
-# OpenAI para DeepSeek
-openai==1.25.0
+# OpenAI compatible con DeepSeek
+openai==1.12.0
 
-# Utilidades
+# Utilidades básicas
 python-dotenv==1.0.0
-
-# Dependencies que SÍ funcionan con Python 3.12
-pydantic==2.3.0
-httpx==0.24.1
-typing-extensions==4.7.1
-
-# NumPy compatible (evitar compilación)
-numpy==1.24.0
-
-# Langchain básico sin problemas
-langchain-core==0.1.20
-langchain-openai==0.1.0
