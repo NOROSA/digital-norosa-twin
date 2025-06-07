@@ -30,8 +30,9 @@ def search_cv(query: str) -> str:
 def build_agent() -> Agent:
     """Devuelve el agente listo para usar con DeepSeek como backend."""
     client = AsyncOpenAI(
-        api_key=os.getenv("OPENAI_API_KEY"),
-        base_url=os.getenv("OPENAI_BASE_URL", "https://api.deepseek.com/v1"),
+        api_key=os.getenv("DEEPSEEK_API_KEY"),           # ← clave nueva
+        base_url=os.getenv("DEEPSEEK_BASE_URL",          # ← url nueva
+                           "https://api.deepseek.com/v1"),
     )
     set_default_openai_client(client)
 
