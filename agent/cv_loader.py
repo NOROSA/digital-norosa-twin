@@ -1,30 +1,31 @@
+"""Carga el CV desde ENV, PDF local o URL y lo devuelve como texto plano."""
+
 import os
+import io
 import pdfplumber
-from openai_agents import Document
+import requests
 
 
-def load_cv():
-    """Devuelve una lista de Document con el contenido del CV."""
-    docs = []
+def load_cv() -> str:
+    """Devuelve TODO el texto del CV como una única cadena."""
 
+    # 1️⃣ Variable de entorno con el texto directamente
     if (text := os.getenv("CV_TEXT")):
-        docs.append(Document(content=text, metadata={"source": "env"}))
+        return text
 
-    elif (path := os.getenv("CV_PATH")) and os.path.exists(path):
+    # 2️⃣ PDF en el contenedor
+    if (path := os.getenv("CV_PATH")) and os.path.exists(path):
         with pdfplumber.open(path) as pdf:
-            for page in pdf.pages:
-                docs.append(Document(content=page.extract_text(), metadata={"source": path}))
+            return "\n".join(page.extract_text() or "" for page in pdf.pages)
 
-    elif (url := os.getenv("CV_URL")):
-        import requests, io
+    # 3️⃣ PDF remoto por URL
+    if (url := os.getenv("CV_URL")):
         resp = requests.get(url, timeout=15)
         resp.raise_for_status()
         with pdfplumber.open(io.BytesIO(resp.content)) as pdf:
-            for page in pdf.pages:
-                docs.append(Document(content=page.extract_text(), metadata={"source": url}))
+            return "\n".join(page.extract_text() or "" for page in pdf.pages)
 
-    else:
-        raise RuntimeError(
-            "Debes definir CV_TEXT, CV_PATH o CV_URL en variables de entorno para que el bot conozca tu CV."
-        )
-    return docs
+    # Si nada aplica → error explícito
+    raise RuntimeError(
+        "Debes definir CV_TEXT, CV_PATH o CV_URL para que el bot conozca tu CV."
+    )

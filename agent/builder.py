@@ -1,5 +1,8 @@
+"""Construye y expone el RecruiterAgent basado en el SDK oficial `openai-agents`."""
+
 import os
 from openai import AsyncOpenAI
+# El SDK (v 0.0.17) expone sus clases en el paquete de nivel superior `agents`
 from agents import (
     Agent,
     Runner,
@@ -9,14 +12,13 @@ from agents import (
 from agent.cv_loader import load_cv
 
 # ──────────────────────────────
-# 1. Carga tu CV una sola vez
+# 1. Carga el CV en memoria
 # ──────────────────────────────
-_docs = load_cv()
-_CV_TEXT = "\n".join(doc.content for doc in _docs)
+_CV_TEXT = load_cv()
 
 @function_tool
 def search_cv(query: str) -> str:
-    """Devuelve hasta 20 líneas del CV relevantes para la consulta."""
+    """Devuelve las primeras 20 líneas del CV que contengan la consulta."""
     q = query.lower()
     hits = [line for line in _CV_TEXT.splitlines() if q in line.lower()]
     return "\n".join(hits[:20]) or "No se encontró información en el CV."
@@ -25,13 +27,14 @@ def search_cv(query: str) -> str:
 # 2. Construye el agente
 # ──────────────────────────────
 def build_agent() -> Agent:
+    """Devuelve el agente listo para usar con DeepSeek como backend."""
     client = AsyncOpenAI(
         api_key=os.getenv("OPENAI_API_KEY"),
         base_url=os.getenv("OPENAI_BASE_URL", "https://api.deepseek.com/v1"),
     )
     set_default_openai_client(client)
 
-    recruiter = Agent(
+    return Agent(
         name="RecruiterAgent",
         instructions=(
             "Eres un asistente experto en la trayectoria profesional del usuario. "
@@ -41,8 +44,7 @@ def build_agent() -> Agent:
         tools=[search_cv],
         model="deepseek-chat",
     )
-    return recruiter
 
-# Helper síncrono para servicios que no sean async (p.ej. Telegram)
+# Helper síncrono para integraciones no-async (Telegram)
 def chat_sync(message: str) -> str:
     return Runner.run_sync(build_agent(), message).final_output

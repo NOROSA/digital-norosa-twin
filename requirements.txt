@@ -1,6 +1,6 @@
-openai>=1.25.0          # SDK oficial
-openai-agents==0.0.17   # Framework Agents (Preview, última versión publicada)    # Framework Agents (Preview)
+openai>=1.25.0
+openai-agents==0.0.17  # SDK Agents (import path: agents)
 python-telegram-bot>=21.0
 python-dotenv>=1.0
 pdfplumber>=0.10
-faiss-cpu>=1.7.4        # memoria vectorial sencilla (opcional)
+requests>=2.32
