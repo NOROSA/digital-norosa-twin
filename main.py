@@ -1,5 +1,5 @@
-# 🤖 Digital Twin - Telegram Bot Corregido y Actualizado
-# Sintaxis CrewAI 2025 verificada y correcta
+# 🤖 Digital Twin - Telegram Bot con YAML (Forma oficial CrewAI 2025)
+# Usando la estructura recomendada: CrewBase + YAML configs
 
 import os
 import asyncio
@@ -35,7 +35,7 @@ print(f"🔑 DEEPSEEK_API_KEY: {'✅ OK' if DEEPSEEK_API_KEY else '❌ FALTA'}")
 
 
 class SimpleDigitalTwin:
-    """🤖 Digital Twin con CrewAI sintaxis 2025"""
+    """🤖 Digital Twin usando YAML configs (forma oficial CrewAI 2025)"""
     
     def __init__(self):
         print("🤖 Inicializando Digital Twin...")
@@ -89,7 +89,7 @@ class SimpleDigitalTwin:
         }
     
     def setup_ai(self):
-        """Configurar IA con CrewAI - Sintaxis 2025 corregida"""
+        """Configurar IA y crear archivos YAML necesarios"""
         try:
             print("🧠 CONFIGURANDO IA...")
             
@@ -97,9 +97,12 @@ class SimpleDigitalTwin:
                 print("❌ DEEPSEEK_API_KEY falta")
                 return
             
-            # Configurar variables de entorno para OpenAI compatible
+            # Configurar variables de entorno
             os.environ["OPENAI_API_KEY"] = DEEPSEEK_API_KEY
             os.environ["OPENAI_API_BASE"] = DEEPSEEK_BASE_URL
+            
+            # Crear archivos YAML (forma oficial)
+            self.create_yaml_configs()
             
             self.use_ai = True
             print("🎯 IA CONFIGURADA")
@@ -108,13 +111,79 @@ class SimpleDigitalTwin:
             print(f"💥 Error setup_ai: {e}")
             self.use_ai = False
     
+    def create_yaml_configs(self):
+        """Crea archivos YAML con la estructura oficial CrewAI 2025"""
+        try:
+            print("📁 Creando configuraciones YAML...")
+            
+            # Crear directorio config
+            os.makedirs('config', exist_ok=True)
+            
+            # agents.yaml con estructura oficial
+            agents_yaml = f"""# Agents configuration for Digital Twin
+
+cv_expert:
+  role: "AI Expert & Digital Consultant"
+  goal: "Provide helpful, professional information about AI technology and {self.cv_data['name']}'s expertise"
+  backstory: |
+    You are {self.cv_data['name']}, a {self.cv_data['title']} based in {self.cv_data['location']}.
+    
+    Your expertise includes: {', '.join(self.cv_data['skills'])}.
+    
+    Current role: {self.cv_data['experience'][0]['role']} at {self.cv_data['experience'][0]['company']}.
+    
+    You have extensive experience in:
+    - {self.cv_data['experience'][0]['highlights']}
+    - {self.cv_data['experience'][1]['highlights']}
+    
+    Notable projects:
+    - {self.cv_data['projects'][0]['name']}: {self.cv_data['projects'][0]['description']}
+    - {self.cv_data['projects'][1]['name']}: {self.cv_data['projects'][1]['description']}
+    
+    You are knowledgeable, professional, and helpful. Always provide accurate information
+    about AI, technology, and your professional background. Be conversational but informative.
+"""
+            
+            # tasks.yaml con estructura oficial
+            tasks_yaml = """# Tasks configuration for Digital Twin
+
+respond_to_query:
+  description: |
+    Respond to the user's query: {query}
+    
+    Provide a helpful, professional response based on your expertise in AI and technology.
+    Be conversational but informative. If asked about your background, use the information
+    from your backstory.
+    
+    Guidelines:
+    - Be professional but friendly
+    - Provide specific technical details when relevant
+    - Share project experience when applicable
+    - Offer to discuss further collaboration if appropriate
+  expected_output: "A helpful, professional response to the user's query in Spanish (unless they write in English)"
+  agent: cv_expert
+"""
+            
+            # Escribir archivos
+            with open('config/agents.yaml', 'w', encoding='utf-8') as f:
+                f.write(agents_yaml)
+            
+            with open('config/tasks.yaml', 'w', encoding='utf-8') as f:
+                f.write(tasks_yaml)
+            
+            print("✅ Archivos YAML creados")
+            
+        except Exception as e:
+            print(f"❌ Error creando YAML: {e}")
+            raise
+    
     async def process_query(self, message: str) -> str:
-        """Procesa consulta usando CrewAI"""
+        """Procesa consulta usando CrewAI con YAML (forma oficial)"""
         print(f"🔍 Procesando: '{message}' - IA habilitada: {self.use_ai}")
         
         if self.use_ai:
             try:
-                return await self.ai_response(message)
+                return await self.ai_response_yaml(message)
             except Exception as e:
                 print(f"💥 ERROR CON IA: {e}")
                 import traceback
@@ -123,67 +192,56 @@ class SimpleDigitalTwin:
         
         return self.simple_response(message)
     
-    async def ai_response(self, message: str) -> str:
-        """Respuesta usando CrewAI - Sintaxis 2025 verificada"""
+    async def ai_response_yaml(self, message: str) -> str:
+        """Respuesta usando CrewAI con YAML - Forma oficial 2025"""
         try:
-            # Importar CrewAI con sintaxis correcta
+            # Importar CrewAI con estructura oficial
             from crewai import Agent, Task, Crew, Process
+            from crewai.project import CrewBase, agent, task, crew
             
-            # Configurar LLM usando el patrón actualizado
-            try:
-                from langchain_openai import ChatOpenAI
-                llm = ChatOpenAI(
-                    model="deepseek-chat",
-                    base_url=DEEPSEEK_BASE_URL,
-                    api_key=DEEPSEEK_API_KEY,
-                    temperature=0.7
-                )
-            except ImportError:
-                # Fallback si no está disponible langchain_openai
-                print("⚠️ langchain_openai no disponible, usando configuración básica")
-                llm = None
-            
-            # Crear agente con sintaxis 2025
-            agent = Agent(
-                role="AI Expert & Tech Consultant",
-                goal="Provide helpful, professional information about AI and technology",
-                backstory=f"""You are {self.cv_data['name']}, a {self.cv_data['title']} 
-                based in {self.cv_data['location']}.
+            # Crear clase Crew usando decoradores oficiales
+            @CrewBase
+            class DigitalTwinCrew:
+                """Digital Twin crew using YAML configs"""
                 
-                Your expertise includes: {', '.join(self.cv_data['skills'])}
+                # Rutas a archivos YAML (forma oficial)
+                agents_config = 'config/agents.yaml'
+                tasks_config = 'config/tasks.yaml'
                 
-                Current role: {self.cv_data['experience'][0]['role']} at {self.cv_data['experience'][0]['company']}
+                @agent
+                def cv_expert(self) -> Agent:
+                    """CV Expert agent from YAML config"""
+                    return Agent(
+                        config=self.agents_config['cv_expert'],
+                        verbose=True,
+                        allow_delegation=False
+                    )
                 
-                You are knowledgeable, helpful, and professional. Always provide accurate information
-                about AI, technology, and your professional background.""",
-                verbose=True,
-                allow_delegation=False,
-                llm=llm  # Puede ser None y CrewAI usará el default
-            )
-            
-            # Crear tarea con sintaxis 2025
-            task = Task(
-                description=f"""Respond to this user query: "{message}"
+                @task
+                def respond_to_query(self) -> Task:
+                    """Response task from YAML config"""
+                    return Task(
+                        config=self.tasks_config['respond_to_query']
+                    )
                 
-                Provide a helpful, professional response based on your expertise in AI and technology.
-                Be conversational but informative. If asked about your background, use the information
-                from your backstory.""",
-                expected_output="A helpful, professional response to the user's query",
-                agent=agent
-            )
+                @crew
+                def crew(self) -> Crew:
+                    """Digital Twin crew"""
+                    return Crew(
+                        agents=[self.cv_expert()],
+                        tasks=[self.respond_to_query()],
+                        process=Process.sequential,
+                        verbose=True
+                    )
             
-            # Crear y ejecutar crew con sintaxis 2025
-            crew = Crew(
-                agents=[agent],
-                tasks=[task],
-                process=Process.sequential,  # Explícitamente especificar proceso
-                verbose=True
-            )
+            # Crear y ejecutar crew
+            digital_twin_crew = DigitalTwinCrew()
+            crew_instance = digital_twin_crew.crew()
             
-            # Ejecutar crew
-            result = crew.kickoff()
+            # Ejecutar con inputs (interpolación de variables)
+            result = crew_instance.kickoff(inputs={"query": message})
             
-            # Extraer resultado según la versión de CrewAI
+            # Extraer resultado
             if hasattr(result, 'raw'):
                 return str(result.raw)
             else:
@@ -193,59 +251,47 @@ class SimpleDigitalTwin:
             print(f"❌ CrewAI no disponible: {e}")
             raise Exception("CrewAI no está instalado correctamente")
         except Exception as e:
-            print(f"❌ Error en AI response: {e}")
+            print(f"❌ Error en AI response YAML: {e}")
             raise
     
     def fallback_response(self, message: str) -> str:
-        """Respuesta fallback inteligente usando datos del CV"""
+        """Respuesta fallback inteligente"""
         msg_lower = message.lower()
         
         # Respuestas específicas sobre IA
-        if any(word in msg_lower for word in ['ai', 'inteligencia artificial', 'machine learning', 'crewai', 'langgraph']):
-            return f"""🧠 **Mi experiencia en IA:**
+        if any(word in msg_lower for word in ['ai', 'inteligencia artificial', 'crewai', 'langgraph', 'yaml']):
+            return f"""🧠 **Mi experiencia en IA y CrewAI:**
 
-Como {self.cv_data['title']}, trabajo con tecnologías de vanguardia:
+Como {self.cv_data['title']}, trabajo con las últimas tecnologías:
 
-**🛠️ Stack tecnológico:**
-• **Frameworks IA:** LangGraph, CrewAI, LangChain
-• **APIs LLM:** OpenAI, Claude, DeepSeek
-• **ML/DL:** TensorFlow, PyTorch, Scikit-learn
+**🛠️ CrewAI & Multi-Agent Systems:**
+• **Estructura YAML**: Configuración declarativa (forma recomendada 2025)
+• **CrewBase decorators**: @agent, @task, @crew
+• **Process orchestration**: Sequential y Hierarchical
+• **Tools integration**: Custom tools y APIs externas
+
+**🚀 Stack técnico completo:**
+• **Frameworks IA:** LangGraph, CrewAI, LangChain, AutoGen
+• **LLMs:** OpenAI, Claude, DeepSeek, Ollama local
+• **MLOps:** TensorFlow, PyTorch, Scikit-learn
 • **Cloud:** AWS, Azure, Google Cloud
 
-**🚀 Proyecto destacado:**
+**💼 Proyecto destacado:**
 *{self.cv_data['projects'][0]['name']}*
-🔧 Tech Stack: {self.cv_data['projects'][0]['tech']}
+🔧 {self.cv_data['projects'][0]['tech']}
 📋 {self.cv_data['projects'][0]['description']}
 
-**💼 Experiencia actual:**
-{self.cv_data['experience'][0]['role']} en {self.cv_data['experience'][0]['company']}
-🏆 {self.cv_data['experience'][0]['highlights']}
+**📈 Resultados cuantificados:**
+• Sistemas multi-agente para 50k+ usuarios
+• Reducción de costos operativos del 40%
+• Mejora en tiempo de respuesta del 60%
 
-¿Hay algo específico sobre IA que te interese conocer?"""
-        
-        # Respuesta sobre DeepSeek específicamente
-        if 'deepseek' in msg_lower:
-            return f"""🤖 **Experiencia con DeepSeek:**
-
-Como {self.cv_data['title']}, he trabajado con varios LLMs incluyendo DeepSeek:
-
-**🔧 Integración técnica:**
-• API integration con CrewAI
-• Optimización de prompts
-• Configuración multi-modelo
-• Cost optimization strategies
-
-**💡 Ventajas de DeepSeek:**
-• Excelente relación calidad/precio
-• Soporte para APIs OpenAI-compatible
-• Rendimiento competitivo en tareas de código
-
-¿Te interesa implementar DeepSeek en tu proyecto?"""
+¿Te interesa implementar CrewAI en tu proyecto?"""
         
         return self.simple_response(message)
     
     def simple_response(self, message: str) -> str:
-        """Respuestas básicas sin IA - mejoradas"""
+        """Respuestas básicas sin IA"""
         msg_lower = message.lower()
         
         if any(word in msg_lower for word in ['hola', 'hello', 'hi', 'hey']):
@@ -254,37 +300,41 @@ Como {self.cv_data['title']}, he trabajado con varios LLMs incluyendo DeepSeek:
 *{self.cv_data['bio']}*
 
 🎯 **Especialización:**
-• Sistemas IA empresariales y multi-agente
-• Arquitectura de datos y MLOps
+• Sistemas IA multi-agente (CrewAI, LangGraph)
+• Arquitectura empresarial y MLOps
 • Integración de LLMs y automatización
 
-🛠️ **Tech Stack actual:**
+🛠️ **Tech Stack:**
 {', '.join(self.cv_data['skills'][:8])}
 
 📍 {self.cv_data['location']}
 ⚡ {self.cv_data['availability']}
 
-**¿En qué puedo ayudarte hoy?**"""
+**¿En qué puedo ayudarte con IA y tecnología?**"""
 
-        elif any(word in msg_lower for word in ['experiencia', 'skills', 'tecnología', 'trabajo']):
-            return f"""💼 **Mi trayectoria profesional:**
+        elif any(word in msg_lower for word in ['experiencia', 'skills', 'tecnología']):
+            return f"""💼 **Mi experiencia profesional:**
 
 **🚀 Rol actual:**
-{self.cv_data['experience'][0]['role']} en *{self.cv_data['experience'][0]['company']}* ({self.cv_data['experience'][0]['years']})
+{self.cv_data['experience'][0]['role']} en *{self.cv_data['experience'][0]['company']}*
 
 🏆 **Logros destacados:**
 {self.cv_data['experience'][0]['highlights']}
 
 **📚 Experiencia previa:**
 {self.cv_data['experience'][1]['role']} en *{self.cv_data['experience'][1]['company']}*
-🎯 {self.cv_data['experience'][1]['highlights']}
 
-**🛠️ Stack tecnológico:**
+**🛠️ Stack completo:**
 {', '.join(self.cv_data['skills'])}
+
+**🎯 Especialización 2025:**
+• CrewAI con configuración YAML
+• Multi-agent orchestration
+• Enterprise AI architecture
 
 ¿Hay alguna tecnología específica que te interese?"""
 
-        elif any(word in msg_lower for word in ['proyecto', 'portfolio', 'casos']):
+        elif any(word in msg_lower for word in ['proyecto', 'portfolio']):
             projects_text = "\n\n".join([
                 f"**{i+1}. {proj['name']}**\n🛠️ *Tech:* {proj['tech']}\n📋 {proj['description']}"
                 for i, proj in enumerate(self.cv_data['projects'])
@@ -294,262 +344,19 @@ Como {self.cv_data['title']}, he trabajado con varios LLMs incluyendo DeepSeek:
 
 {projects_text}
 
-**📊 Impacto cuantificado:**
+**📊 Métricas de impacto:**
 • Sistemas que procesan 1M+ transacciones/día
-• Plataformas que sirven a 50k+ usuarios activos
-• Reducción de costos operativos del 40%
+• Arquitecturas multi-agente para 50k+ usuarios
+• Optimización de costos del 40%
 • Mejora en tiempo de respuesta del 60%
 
-¿Te interesa conocer detalles técnicos de algún proyecto?"""
+**🔧 Tecnologías aplicadas:**
+• CrewAI con YAML configs
+• LangGraph para workflows complejos
+• Integración multi-LLM
+• MLOps y CI/CD
 
-        elif any(word in msg_lower for word in ['disponible', 'contratar', 'contacto', 'colaborar']):
-            return f"""📅 **Disponibilidad y colaboración:**
+¿Te interesa conocer detalles técnicos?"""
 
-⚡ **Estado actual:** {self.cv_data['availability']}
-
-**🎯 Servicios que ofrezco:**
-• 🤖 Desarrollo de sistemas IA multi-agente
-• 🔗 Integración de LLMs (GPT, Claude, DeepSeek)
-• 🏗️ Arquitectura de datos y MLOps
-• 💡 Consultoría en transformación digital IA
-
-**📋 Para iniciar colaboración, compárteme:**
-• 📧 Tu email de contacto
-• 🏢 Empresa/proyecto
-• 🎯 Descripción del desafío técnico
-• ⚡ Tecnologías involucradas
-• 📅 Timeline esperado
-
-**⏱️ Garantía: Respuesta en menos de 24 horas**
-
-¿En qué proyecto estás trabajando?"""
-
-        elif any(word in msg_lower for word in ['precio', 'coste', 'tarifa', 'presupuesto']):
-            return f"""💰 **Estructura de colaboración:**
-
-Como {self.cv_data['title']}, ofrezco diferentes modalidades:
-
-**🎯 Consultoría estratégica:**
-• Auditoría de arquitectura IA
-• Roadmap tecnológico
-• Due diligence técnico
-
-**🛠️ Desarrollo técnico:**
-• Implementación de sistemas IA
-• Integración de LLMs
-• MLOps y automatización
-
-**📋 Para presupuesto personalizado:**
-• Describe el scope del proyecto
-• Timeline y urgencia
-• Recursos técnicos disponibles
-• Complejidad estimada
-
-Cada proyecto es único - prefiero discutir detalles antes de dar cifras.
-
-¿Cuál es tu proyecto específico?"""
-
-        else:
-            return f"""🤖 **Soy {self.cv_data['name']}**
-*{self.cv_data['title']}*
-
-**🧠 Experto en:**
-• Inteligencia Artificial y Machine Learning
-• Sistemas multi-agente (CrewAI, LangGraph)
-• Arquitectura de datos enterprise
-• Integración de LLMs y automatización
-
-**💬 Puedes preguntarme sobre:**
-• 🔧 Experiencia técnica y proyectos
-• 🚀 Tecnologías de IA y mejores prácticas
-• 📅 Disponibilidad para colaboraciones
-• 💡 Soluciones específicas a tus desafíos
-
-**¿Qué aspecto específico te interesa explorar?**"""
-
-
-class TelegramBot:
-    """🤖 Bot de Telegram optimizado"""
-    
-    def __init__(self):
-        print("🤖 Inicializando bot...")
-        
-        if not TELEGRAM_TOKEN:
-            print("❌ TELEGRAM_TOKEN requerido")
-            exit(1)
-            
-        self.digital_twin = SimpleDigitalTwin()
-        self.app = Application.builder().token(TELEGRAM_TOKEN).build()
-        self.setup_handlers()
-        print("✅ Bot inicializado")
-    
-    def setup_handlers(self):
-        """Configurar handlers del bot"""
-        self.app.add_handler(CommandHandler("start", self.start_command))
-        self.app.add_handler(CommandHandler("help", self.help_command))
-        self.app.add_handler(CommandHandler("about", self.about_command))
-        self.app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message))
-    
-    async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Comando start mejorado"""
-        cv = self.digital_twin.cv_data
-        
-        welcome = f"""🚀 **¡Bienvenido al Digital Twin de {cv['name']}!**
-
-*{cv['bio']}*
-
-📍 **Ubicación:** {cv['location']}
-💼 **Rol actual:** {cv['title']}
-⚡ **Estado:** {cv['availability']}
-
-**🎯 Soy especialista en:**
-• Sistemas IA empresariales y multi-agente
-• LangGraph, CrewAI, integración de LLMs
-• Arquitectura de datos y MLOps
-
-**💬 Comandos disponibles:**
-• `/help` - Ver todas las opciones
-• `/about` - Conocer mi experiencia detallada
-
-**¡Pregúntame cualquier cosa sobre IA y tecnología!** 🤖"""
-        
-        await update.message.reply_text(welcome, parse_mode='Markdown')
-    
-    async def help_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Comando help mejorado"""
-        help_text = """📋 **¿Cómo puedo ayudarte?**
-
-**🔍 Temas de consulta:**
-• 💻 **Experiencia técnica** - Skills, proyectos, tecnologías
-• 🧠 **Inteligencia Artificial** - CrewAI, LangGraph, LLMs
-• 🚀 **Casos de uso** - Proyectos reales, implementaciones
-• 📅 **Colaboración** - Disponibilidad, servicios, presupuestos
-• 🎯 **Soluciones específicas** - Tu desafío técnico particular
-
-**💡 Ejemplos de preguntas:**
-• "¿Qué experiencia tienes con CrewAI?"
-• "¿Cómo integrarías DeepSeek en un sistema empresarial?"
-• "Cuéntame sobre tus proyectos de IA"
-• "¿Estás disponible para consultoría?"
-
-**🤖 ¡Solo escribe tu pregunta en lenguaje natural!**"""
-        
-        await update.message.reply_text(help_text, parse_mode='Markdown')
-    
-    async def about_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Comando about con información detallada"""
-        cv = self.digital_twin.cv_data
-        
-        about_text = f"""👨‍💻 **{cv['name']}**
-*{cv['title']}*
-
-**🏢 Experiencia profesional:**
-
-**🚀 Actual:** {cv['experience'][0]['role']}
-📍 {cv['experience'][0]['company']} ({cv['experience'][0]['years']})
-🏆 {cv['experience'][0]['highlights']}
-
-**📚 Anterior:** {cv['experience'][1]['role']}
-📍 {cv['experience'][1]['company']} ({cv['experience'][1]['years']})
-🎯 {cv['experience'][1]['highlights']}
-
-**🛠️ Stack tecnológico:**
-{', '.join(cv['skills'])}
-
-**💡 Enfoque:**
-Especializado en democratizar la IA empresarial mediante sistemas multi-agente inteligentes y arquitecturas escalables.
-
-¿Quieres conocer algún aspecto específico?"""
-        
-        await update.message.reply_text(about_text, parse_mode='Markdown')
-    
-    async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Maneja mensajes de texto con mejor UX"""
-        try:
-            # Mostrar typing indicator
-            await context.bot.send_chat_action(
-                chat_id=update.effective_chat.id, 
-                action="typing"
-            )
-            
-            # Procesar mensaje
-            response = await self.digital_twin.process_query(update.message.text)
-            
-            # Dividir respuesta si es muy larga
-            if len(response) > 4096:
-                # Telegram tiene límite de 4096 caracteres
-                parts = [response[i:i+4000] for i in range(0, len(response), 4000)]
-                for part in parts:
-                    await update.message.reply_text(part, parse_mode='Markdown')
-            else:
-                await update.message.reply_text(response, parse_mode='Markdown')
-            
-            # Log para debug
-            user = update.effective_user
-            print(f"👤 {user.first_name} ({user.id}): {update.message.text[:100]}...")
-            print(f"🤖 Respuesta enviada ({len(response)} chars)")
-            
-        except Exception as e:
-            logger.error(f"Error handling message: {e}")
-            
-            # Mensaje de error amigable
-            error_msg = """🤖 Disculpa, encontré un problema técnico.
-
-**¿Puedes intentar:**
-• Reformular tu pregunta
-• Usar `/help` para ver opciones
-• Contactar directamente si es urgente
-
-*Estoy trabajando para solucionarlo.* 🔧"""
-            
-            await update.message.reply_text(error_msg, parse_mode='Markdown')
-    
-    async def cleanup_webhook(self):
-        """Limpia webhooks previos"""
-        try:
-            print("🧹 Limpiando conexiones previas...")
-            await self.app.bot.delete_webhook(drop_pending_updates=True)
-            await asyncio.sleep(2)
-            print("✅ Conexiones limpiadas")
-        except Exception as e:
-            print(f"⚠️ Error limpiando conexiones: {e}")
-    
-    def start_bot(self):
-        """Inicia el bot con manejo robusto de errores"""
-        try:
-            print("🚀 INICIANDO TELEGRAM BOT...")
-            
-            # Limpiar conexiones previas
-            asyncio.run(self.cleanup_webhook())
-            
-            # Iniciar polling con configuración optimizada
-            print("🔄 Iniciando polling...")
-            self.app.run_polling(
-                drop_pending_updates=True,
-                timeout=30,
-                poll_interval=1.0,
-                bootstrap_retries=5
-            )
-            
-        except KeyboardInterrupt:
-            print("👋 Bot detenido por usuario")
-        except Exception as e:
-            logger.error(f"Error crítico en bot: {e}")
-            import traceback
-            traceback.print_exc()
-            raise
-
-
-if __name__ == "__main__":
-    print("🚀 INICIANDO DIGITAL TWIN BOT...")
-    
-    try:
-        bot = TelegramBot()
-        bot.start_bot()
-    except Exception as e:
-        print(f"❌ Error fatal: {e}")
-        print("\n💡 Verifica:")
-        print("• TELEGRAM_TOKEN configurado")
-        print("• Dependencias instaladas: pip install python-telegram-bot crewai")
-        print("• Python >= 3.10")
-        exit(1)
+        elif any(word in msg_lower for word in ['disponible', 'contratar', 'colaborar']):
+            return f"""
