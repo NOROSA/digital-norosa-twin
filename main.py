@@ -260,7 +260,7 @@ Pregúntame sobre:
             )
     
     async def cleanup_and_start(self):
-        """Limpia conexiones y arranca como Asuka"""
+        """Limpia conexiones y arranca"""
         try:
             print("🧹 Limpiando conexiones previas...")
             
@@ -273,12 +273,32 @@ Pregúntame sobre:
             print(f"⚠️ Error en cleanup: {e}")
         
         print("🎯 Iniciando polling...")
-        self.app.run_polling(drop_pending_updates=True)
+    
+    def start_bot(self):
+        """Inicia el bot de forma síncrona"""
+        # Usar el loop existente en lugar de crear uno nuevo
+        try:
+            # Obtener loop existente
+            loop = asyncio.get_event_loop()
+            
+            # Hacer cleanup primero
+            loop.run_until_complete(self.cleanup_and_start())
+            
+            # Iniciar polling sin crear nuevo loop
+            self.app.run_polling(drop_pending_updates=True)
+            
+        except RuntimeError as e:
+            if "event loop is already running" in str(e):
+                print("⚠️ Event loop ya corriendo - modo alternativo")
+                # Modo alternativo sin loop
+                self.app.run_polling(drop_pending_updates=True)
+            else:
+                raise e
 
 if __name__ == "__main__":
     print("🚀 INICIANDO BOT PURO...")
     
     bot = TelegramBot()
     
-    # Ejecutar con cleanup como Asuka
-    asyncio.run(bot.cleanup_and_start())
+    # Ejecutar sin asyncio.run() para evitar conflicto de loops
+    bot.start_bot()
