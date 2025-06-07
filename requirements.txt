@@ -13,8 +13,8 @@ python-telegram-bot==20.6
 fastapi==0.100.1
 uvicorn==0.23.0
 
-# OpenAI compatible con DeepSeek
-openai==1.12.0
+# OpenAI compatible con DeepSeek - ACTUALIZADA para compatibilidad con CrewAI
+openai==1.13.3
 
 # Utilidades básicas
 python-dotenv==1.0.0
