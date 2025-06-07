@@ -91,27 +91,22 @@ class SimpleDigitalTwin:
             # Intentar import CrewAI
             from crewai import Crew, Agent, Task
             
-            # Crear crew simple
-            agent = Agent(
+            # Crear crew simple SIN EJECUTAR
+            self.agent = Agent(
                 role='AI Assistant',
                 goal='Help users professionally',
                 backstory=f'You are {self.cv_data["name"]}, an AI expert.',
-                verbose=True,
+                verbose=False,  # Cambiar a False para evitar logs
                 allow_delegation=False
             )
             
-            task = Task(
-                description='Respond to user query professionally as Norbert.',
-                agent=agent,
+            self.task_template = Task(
+                description='Respond to user query professionally as Norbert: {query}',
+                agent=self.agent,
                 expected_output='Professional response'
             )
             
-            self.crew = Crew(
-                agents=[agent],
-                tasks=[task],
-                verbose=False
-            )
-            
+            # NO crear crew aún - solo guardar componentes
             self.use_ai = True
             print("✅ IA configurada correctamente")
             
@@ -124,8 +119,27 @@ class SimpleDigitalTwin:
         
         if self.use_ai:
             try:
-                result = self.crew.kickoff(inputs={"query": f"User asks: {message}. Respond as {self.cv_data['name']}"})
+                # Crear crew dinámicamente para cada consulta
+                from crewai import Crew, Task
+                
+                # Crear tarea específica para esta consulta
+                task = Task(
+                    description=f'Respond to user query professionally as {self.cv_data["name"]}: {message}',
+                    agent=self.agent,
+                    expected_output='Professional response'
+                )
+                
+                # Crear crew temporal
+                crew = Crew(
+                    agents=[self.agent],
+                    tasks=[task],
+                    verbose=False
+                )
+                
+                # Ejecutar crew
+                result = crew.kickoff()
                 return str(result)
+                
             except Exception as e:
                 print(f"❌ Error IA: {e}")
                 # Fallback a respuesta simple
