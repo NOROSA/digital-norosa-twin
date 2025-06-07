@@ -123,29 +123,54 @@ class SimpleDigitalTwin:
             # 4. Importar CrewAI
             try:
                 print("📦 Importando CrewAI...")
-                from crewai import Agent, Task
+                from crewai import Agent, Task, LLM
                 print("✅ CrewAI importado")
             except Exception as e:
                 print(f"❌ Error importando CrewAI: {e}")
                 self.use_ai = False
                 return
             
-            # 5. Crear agente simple
+            # 5. Crear agente simple con configuración LLM explícita
             try:
-                print("🤖 Creando agente...")
+                print("🤖 Creando agente con LLM configurado...")
+                
+                # Configurar LLM explícitamente para CrewAI
+                llm = LLM(
+                    model="deepseek-chat",
+                    base_url=DEEPSEEK_BASE_URL,
+                    api_key=DEEPSEEK_API_KEY
+                )
+                
+                print("✅ LLM object creado")
+                
                 self.agent = Agent(
                     role='AI Assistant',
                     goal='Help users professionally',
                     backstory=f'You are {self.cv_data["name"]}, an AI expert.',
                     verbose=False,
                     allow_delegation=False,
-                    llm="deepseek-chat"  # Especificar modelo explícitamente
+                    llm=llm  # Usar LLM object específico
                 )
-                print("✅ Agente creado")
+                print("✅ Agente creado con LLM específico")
+                
             except Exception as e:
-                print(f"❌ Error creando agente: {e}")
-                self.use_ai = False
-                return
+                print(f"❌ Error creando agente con LLM object: {e}")
+                
+                # Fallback: Agente sin LLM específico
+                try:
+                    print("🔄 Intentando agente básico...")
+                    self.agent = Agent(
+                        role='AI Assistant',
+                        goal='Help users professionally',
+                        backstory=f'You are {self.cv_data["name"]}, an AI expert.',
+                        verbose=False,
+                        allow_delegation=False
+                    )
+                    print("✅ Agente básico creado")
+                except Exception as e2:
+                    print(f"❌ Error creando agente básico: {e2}")
+                    self.use_ai = False
+                    return
             
             self.use_ai = True
             print("🎯 IA CONFIGURADA CORRECTAMENTE")
