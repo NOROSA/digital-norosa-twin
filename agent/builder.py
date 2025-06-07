@@ -3,8 +3,7 @@
 
 import os
 from openai import AsyncOpenAI
-from agents import Agent, Runner, function_tool
-from agents.models import OpenAIChatCompletionModel   # ← OBJETO DEL SDK
+from agents import Agent, Runner, function_tool, OpenAIChatCompletionModel   # ← OBJETO DEL SDK
 from agent.cv_loader import load_cv
 
 # 1. CV en memoria -----------------------------------------------------------------
