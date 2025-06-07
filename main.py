@@ -1,5 +1,5 @@
-# 🤖 Tu Yo Virtual Profesional - CrewAI Nativo
-# Simple, limpio y usando el YAML nativo de CrewAI
+# 🤖 Tu Yo Virtual Profesional - CrewAI Nativo con YAML
+# Usando archivos agents.yaml y tasks.yaml con DeepSeek
 
 import os
 import smtplib
@@ -7,12 +7,13 @@ import asyncio
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Dict, Any
+from contextlib import asynccontextmanager
 
 # Telegram Bot
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes
 
-# CrewAI Framework - NATIVO
+# CrewAI Framework - NATIVO con YAML
 from crewai import Crew
 
 # FastAPI for Railway deployment
@@ -31,8 +32,12 @@ EMAIL_USER = os.getenv('EMAIL_USER')
 EMAIL_PASS = os.getenv('EMAIL_PASS')
 NOTIFICATION_EMAIL = os.getenv('NOTIFICATION_EMAIL')
 
+# IMPORTANTE: Configurar variables de entorno para DeepSeek
+os.environ["OPENAI_API_KEY"] = DEEPSEEK_API_KEY
+os.environ["OPENAI_API_BASE"] = DEEPSEEK_BASE_URL
+
 class DigitalTwin:
-    """🤖 Tu representante virtual usando CrewAI nativo"""
+    """🤖 Tu representante virtual usando CrewAI con YAML"""
     
     def __init__(self):
         self.cv_data = self.load_cv_data()
@@ -85,46 +90,161 @@ class DigitalTwin:
         }
     
     def setup_crew(self):
-        """Configura el crew usando archivos YAML nativos"""
-        # CrewAI buscará automáticamente agents.yaml y tasks.yaml
+        """Configura el crew usando archivos YAML nativos con DeepSeek"""
         try:
-            self.crew = Crew()
+            # SOLUCIÓN CORREGIDA: Usar archivos YAML directamente
+            # CrewAI buscará automáticamente agents.yaml y tasks.yaml en la carpeta actual
+            # o en la carpeta config/
+            
+            # Verificar que los archivos YAML existan
+            import os
+            yaml_files = ['agents.yaml', 'tasks.yaml']
+            config_files = ['config/agents.yaml', 'config/tasks.yaml']
+            
+            # Buscar archivos YAML
+            yaml_found = all(os.path.exists(f) for f in yaml_files)
+            config_found = all(os.path.exists(f) for f in config_files)
+            
+            if yaml_found:
+                # Archivos en directorio raíz
+                print("✅ Usando archivos YAML en directorio raíz")
+                self.crew = Crew()
+            elif config_found:
+                # Archivos en carpeta config/
+                print("✅ Usando archivos YAML en carpeta config/")
+                self.crew = Crew(config_path="config")
+            else:
+                # No hay archivos YAML, crear crew programáticamente
+                print("⚠️ No se encontraron archivos YAML, usando configuración por código")
+                self.crew = self.create_fallback_crew()
+            
+            print("✅ CrewAI configurado correctamente")
+            
         except Exception as e:
             print(f"Error setting up crew: {e}")
-            # Fallback simple si no hay archivos YAML
-            self.crew = None
+            print("🔄 Intentando configuración fallback...")
+            self.crew = self.create_fallback_crew()
+    
+    def create_fallback_crew(self):
+        """Crea crew programáticamente si no hay archivos YAML"""
+        from crewai import Agent, Task
+        
+        try:
+            # Crear agente principal
+            cv_agent = Agent(
+                role='Professional CV Expert & Representative',
+                goal=f'Act as the professional representative of {self.cv_data["name"]}, showcasing experience and skills',
+                backstory=f'''You are the virtual representative of {self.cv_data["name"]}, a skilled {self.cv_data["title"]}. 
+                You know their complete career history, technical skills: {", ".join(self.cv_data["skills"])}, 
+                and professional achievements.
+                
+                Personality: {self.cv_data["personality"]}
+                
+                You should:
+                - Speak in first person as if you ARE {self.cv_data["name"]}
+                - Be enthusiastic about technical projects
+                - Highlight relevant experience for each question
+                - Show personality while maintaining professionalism
+                - Suggest next steps when someone shows interest''',
+                verbose=True,
+                allow_delegation=False
+            )
+            
+            # Crear tarea principal
+            response_task = Task(
+                description='''Analyze the user query and provide a comprehensive professional response.
+                
+                User Query: {query}
+                
+                Professional Context Available:
+                - Technical skills and experience
+                - Project portfolio and achievements
+                - Work history and current availability
+                
+                Provide a response that:
+                - Directly answers their question
+                - Highlights relevant experience
+                - Shows enthusiasm and competence
+                - Maintains authentic personality
+                - Suggests logical next steps if appropriate''',
+                agent=cv_agent,
+                expected_output='A personalized, professional response that addresses the query and represents the professional authentically'
+            )
+            
+            # Crear crew
+            return Crew(
+                agents=[cv_agent],
+                tasks=[response_task],
+                verbose=True
+            )
+            
+        except Exception as e:
+            print(f"Error creating fallback crew: {e}")
+            return None
     
     async def process_query(self, user_message: str, context: str = "") -> str:
-        """Procesa consulta del usuario"""
+        """Procesa consulta del usuario usando CrewAI"""
         
         if self.crew:
-            # Usar CrewAI si está configurado
             try:
-                # Contextualizar con datos del CV
-                full_context = f"""
-                INFORMACIÓN DEL PROFESIONAL:
+                # Preparar contexto completo para los agentes
+                professional_context = f"""
+                INFORMACIÓN PROFESIONAL COMPLETA:
+                
                 Nombre: {self.cv_data['name']}
                 Título: {self.cv_data['title']}
+                Ubicación: {self.cv_data['location']}
                 Bio: {self.cv_data['bio']}
-                Skills: {', '.join(self.cv_data['skills'])}
-                Disponibilidad: {self.cv_data['availability']}
+                Personalidad: {self.cv_data['personality']}
                 
-                CONSULTA DEL USUARIO: {user_message}
-                CONTEXTO ADICIONAL: {context}
+                SKILLS TÉCNICOS:
+                {', '.join(self.cv_data['skills'])}
                 
-                Responde como si fueras {self.cv_data['name']}, de manera profesional pero cercana.
-                Si detectas interés en contratación, sugiere dejar datos de contacto.
+                EXPERIENCIA LABORAL:
                 """
                 
-                result = self.crew.kickoff(inputs={"query": full_context})
-                return str(result)
+                for exp in self.cv_data['experience']:
+                    professional_context += f"""
+                • {exp['role']} en {exp['company']} ({exp['years']})
+                  Logros: {exp['highlights']}
+                """
+                
+                professional_context += f"""
+                
+                PROYECTOS DESTACADOS:
+                """
+                
+                for project in self.cv_data['projects']:
+                    professional_context += f"""
+                • {project['name']} - {project['tech']}
+                  {project['description']}
+                """
+                
+                professional_context += f"""
+                
+                DISPONIBILIDAD ACTUAL:
+                {self.cv_data['availability']}
+                
+                CONSULTA DEL USUARIO:
+                {user_message}
+                
+                CONTEXTO ADICIONAL:
+                {context}
+                """
+                
+                # Ejecutar crew con el contexto completo
+                result = self.crew.kickoff(inputs={"query": professional_context})
+                
+                # Extraer el resultado final
+                if hasattr(result, 'raw'):
+                    return str(result.raw)
+                else:
+                    return str(result)
                 
             except Exception as e:
-                print(f"CrewAI error: {e}")
-                # Fallback a respuesta simple
+                print(f"CrewAI execution error: {e}")
                 return self.simple_response(user_message)
         else:
-            # Respuesta simple sin CrewAI
             return self.simple_response(user_message)
     
     def simple_response(self, user_message: str) -> str:
@@ -197,7 +317,7 @@ Te responderé en menos de 24 horas.
             """
 
 class TelegramBot:
-    """🤖 Bot de Telegram sencillo pero efectivo"""
+    """🤖 Bot de Telegram usando CrewAI con YAML"""
     
     def __init__(self):
         self.digital_twin = DigitalTwin()
@@ -357,7 +477,7 @@ Necesito una web con React"
         await query.edit_message_text(text, parse_mode='Markdown')
     
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Maneja mensajes de texto"""
+        """Maneja mensajes de texto usando CrewAI"""
         user_id = update.effective_user.id
         message = update.message.text
         
@@ -370,7 +490,7 @@ Necesito una web con React"
         await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
         
         try:
-            # Procesar con Digital Twin
+            # Procesar con Digital Twin (CrewAI)
             response = await self.digital_twin.process_query(message)
             
             # Enviar respuesta
@@ -385,6 +505,7 @@ Necesito una web con React"
                 )
         
         except Exception as e:
+            print(f"Error processing message: {e}")
             await update.message.reply_text(
                 "🤖 *Disculpa, hubo un pequeño error. ¿Puedes repetir?*",
                 parse_mode='Markdown'
@@ -436,84 +557,3 @@ Necesito una web con React"
                 "*Ejemplo: juan@empresa.com*",
                 parse_mode='Markdown'
             )
-    
-    async def send_notification(self, lead_info: Dict[str, Any]):
-        """Envía notificación por email"""
-        if not all([EMAIL_USER, EMAIL_PASS, NOTIFICATION_EMAIL]):
-            print("Email not configured, skipping notification")
-            return
-        
-        try:
-            msg = MIMEMultipart()
-            msg['From'] = EMAIL_USER
-            msg['To'] = NOTIFICATION_EMAIL
-            msg['Subject'] = f"🔔 Nuevo Lead - {lead_info['telegram_user']}"
-            
-            body = f"""
-🤖 Tu Digital Twin ha captado un nuevo lead!
-
-📧 Email: {lead_info['email']}
-👤 Usuario: {lead_info['telegram_user']}
-💬 Mensaje:
-{lead_info['message']}
-
-¡Respóndele pronto!
-            """
-            
-            msg.attach(MIMEText(body, 'plain'))
-            
-            server = smtplib.SMTP('smtp.gmail.com', 587)
-            server.starttls()
-            server.login(EMAIL_USER, EMAIL_PASS)
-            text = msg.as_string()
-            server.sendmail(EMAIL_USER, NOTIFICATION_EMAIL, text)
-            server.quit()
-            
-            print(f"Notification sent for lead: {lead_info['email']}")
-            
-        except Exception as e:
-            print(f"Failed to send notification: {e}")
-
-# FastAPI app para Railway
-app = FastAPI()
-bot = TelegramBot()
-
-@app.post(f"/webhook/{TELEGRAM_TOKEN}")
-async def webhook(request: Request):
-    """Webhook para Telegram"""
-    try:
-        data = await request.json()
-        update = Update.de_json(data, bot.app.bot)
-        await bot.app.process_update(update)
-        return {"status": "ok"}
-    except Exception as e:
-        print(f"Webhook error: {e}")
-        return {"status": "error"}
-
-@app.get("/")
-async def health():
-    """Health check"""
-    return {
-        "status": "🤖 Digital Twin activo",
-        "name": bot.digital_twin.cv_data['name'],
-        "available": True
-    }
-
-@app.on_event("startup")
-async def startup():
-    """Configurar webhook"""
-    if WEBHOOK_URL:
-        webhook_url = f"{WEBHOOK_URL}/webhook/{TELEGRAM_TOKEN}"
-        await bot.app.bot.set_webhook(webhook_url)
-        print(f"🤖 Webhook configurado: {webhook_url}")
-
-if __name__ == "__main__":
-    import uvicorn
-    
-    if WEBHOOK_URL:
-        # Modo producción con webhooks (Railway)
-        uvicorn.run(app, host="0.0.0.0", port=PORT)
-    else:
-        # Modo desarrollo simple con polling (como Asuka)
-        print("🤖 Iniciando en modo desarrollo (polling)...")
-        bot.app.run_polling()
