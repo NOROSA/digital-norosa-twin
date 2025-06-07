@@ -80,9 +80,9 @@ class SimpleDigitalTwin:
         }
     
     def setup_ai(self):
-        """Configurar IA - DEBUGGING AGRESIVO"""
+        """Configurar IA usando YAML con DeepSeek - VERSIÓN YAML PURA"""
         try:
-            print("🧠 DEBUGGING DEEPSEEK PASO A PASO...")
+            print("🧠 CONFIGURANDO IA CON YAML...")
             
             # 1. Verificar API Key
             if not DEEPSEEK_API_KEY or DEEPSEEK_API_KEY == '':
@@ -92,7 +92,7 @@ class SimpleDigitalTwin:
             
             print(f"✅ API Key presente: {DEEPSEEK_API_KEY[:10]}...")
             
-            # 2. Configurar variables
+            # 2. Configurar variables de entorno para CrewAI
             os.environ["OPENAI_API_KEY"] = DEEPSEEK_API_KEY
             os.environ["OPENAI_API_BASE"] = DEEPSEEK_BASE_URL
             print(f"✅ Variables configuradas: {DEEPSEEK_BASE_URL}")
@@ -106,7 +106,6 @@ class SimpleDigitalTwin:
                     base_url=DEEPSEEK_BASE_URL
                 )
                 
-                # Test simple
                 response = client.chat.completions.create(
                     model="deepseek-chat",
                     messages=[{"role": "user", "content": "Hola, responde solo 'TEST OK'"}],
@@ -120,111 +119,60 @@ class SimpleDigitalTwin:
                 self.use_ai = False
                 return
             
-            # 4. Importar CrewAI
-            try:
-                print("📦 Importando CrewAI...")
-                from crewai import Agent, Task, LLM
-                print("✅ CrewAI importado")
-            except Exception as e:
-                print(f"❌ Error importando CrewAI: {e}")
-                self.use_ai = False
-                return
-            
-            # 5. Crear agente simple con configuración LLM explícita
-            try:
-                print("🤖 Creando agente con LLM configurado...")
-                
-                # Configurar LLM explícitamente para CrewAI
-                llm = LLM(
-                    model="deepseek-chat",
-                    base_url=DEEPSEEK_BASE_URL,
-                    api_key=DEEPSEEK_API_KEY
-                )
-                
-                print("✅ LLM object creado")
-                
-                self.agent = Agent(
-                    role='AI Assistant',
-                    goal='Help users professionally',
-                    backstory=f'You are {self.cv_data["name"]}, an AI expert.',
-                    verbose=False,
-                    allow_delegation=False,
-                    llm=llm  # Usar LLM object específico
-                )
-                print("✅ Agente creado con LLM específico")
-                
-            except Exception as e:
-                print(f"❌ Error creando agente con LLM object: {e}")
-                
-                # Fallback: Agente sin LLM específico
-                try:
-                    print("🔄 Intentando agente básico...")
-                    self.agent = Agent(
-                        role='AI Assistant',
-                        goal='Help users professionally',
-                        backstory=f'You are {self.cv_data["name"]}, an AI expert.',
-                        verbose=False,
-                        allow_delegation=False
-                    )
-                    print("✅ Agente básico creado")
-                except Exception as e2:
-                    print(f"❌ Error creando agente básico: {e2}")
-                    self.use_ai = False
-                    return
+            # 4. Usar YAML directamente - NO crear agente programático
+            print("📄 Usando configuración YAML (agents.yaml + tasks.yaml)")
+            print("✅ YAML configurado con DeepSeek")
             
             self.use_ai = True
-            print("🎯 IA CONFIGURADA CORRECTAMENTE")
+            print("🎯 IA CONFIGURADA CON YAML")
             
         except Exception as e:
-            print(f"💥 Error general en setup_ai: {e}")
+            print(f"💥 Error en setup_ai: {e}")
             import traceback
             traceback.print_exc()
             self.use_ai = False
     
     async def process_query(self, message: str) -> str:
-        """Procesa consulta - DEBUGGING AGRESIVO"""
+        """Procesa consulta usando YAML puro"""
         
-        print(f"🔍 Procesando: '{message}' - IA habilitada: {self.use_ai}")
+        print(f"🔍 Procesando con YAML: '{message}' - IA habilitada: {self.use_ai}")
         
         if self.use_ai:
             try:
-                print("🧠 USANDO IA - Creando crew...")
+                print("📄 USANDO YAML - Creando crew...")
                 
-                from crewai import Crew, Task
+                from crewai import Crew
                 
-                # Crear tarea específica
-                task = Task(
-                    description=f"""Respond professionally as {self.cv_data["name"]}, Senior AI Engineer.
-                    
-                    User question: {message}
-                    
-                    Context: You are an AI expert working at VEOLIA with deep experience in LangGraph, CrewAI, OpenAI API.
-                    
-                    Respond in Spanish, professionally, mentioning specific experience when relevant.""",
-                    agent=self.agent,
-                    expected_output='Professional response in Spanish'
-                )
+                # Usar YAML puro - CrewAI cargará agents.yaml y tasks.yaml automáticamente
+                crew = Crew()
                 
-                print("✅ Tarea creada")
+                print("✅ Crew YAML creado - Ejecutando...")
                 
-                # Crear crew temporal
-                crew = Crew(
-                    agents=[self.agent], 
-                    tasks=[task], 
-                    verbose=True  # Activar verbose para debugging
-                )
+                # Ejecutar con el contexto profesional completo
+                context = f"""
+                INFORMACIÓN PROFESIONAL DE NORBERT:
                 
-                print("✅ Crew creado - Ejecutando...")
+                Nombre: {self.cv_data['name']}
+                Rol: {self.cv_data['title']}
+                Ubicación: {self.cv_data['location']}
                 
-                # Ejecutar
-                result = crew.kickoff()
+                Skills principales: {', '.join(self.cv_data['skills'][:10])}
+                
+                Experiencia actual: {self.cv_data['experience'][0]['role']} en {self.cv_data['experience'][0]['company']}
+                
+                Proyectos: {self.cv_data['projects'][0]['name']} - {self.cv_data['projects'][0]['description']}
+                
+                USER MESSAGE: {message}
+                """
+                
+                result = crew.kickoff(inputs={"query": context})
                 
                 response = str(result)
-                print(f"🎯 IA RESPONDIÓ: {response[:100]}...")
+                print(f"🎯 YAML RESPONDIÓ: {response[:100]}...")
                 return response
                 
             except Exception as e:
-                print(f"💥 ERROR EN IA: {e}")
+                print(f"💥 ERROR CON YAML: {e}")
                 print(f"📋 Tipo error: {type(e).__name__}")
                 import traceback
                 traceback.print_exc()

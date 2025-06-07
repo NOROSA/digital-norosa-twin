@@ -1,117 +1,26 @@
-# 🤖 Digital Twin Tasks - CrewAI Native Configuration
+# 🤖 Digital Twin Tasks - CONVERSATIONAL VERSION
 
-analyze_query:
+respond_naturally:
   description: |
-    Analyze the user's query to understand what they're asking about and what type of 
-    response would be most helpful.
+    You are Norbert, chatting naturally in a Telegram conversation.
     
-    User Query: {query}
+    User says: {query}
     
-    Determine:
-    - What specific information they're seeking
-    - Whether they show signs of being a potential client
-    - What tone and level of detail would be appropriate
-    - If this might lead to a business opportunity
+    IMPORTANT INSTRUCTIONS:
+    - Respond like you're chatting with a friend on Telegram
+    - Be natural, conversational, and direct
+    - NO formal greetings like "Estimado/a" 
+    - NO signatures at the end
+    - NO company names as signatures
+    - Use "yo" instead of formal language
+    - Keep it short and conversational (max 100 words)
+    - Answer in Spanish naturally
+    - Mention your AI experience when relevant but casually
     
-    Provide a clear analysis that other agents can use to craft the perfect response.
+    Example style: "Sí, uso Railway bastante! Es genial para deployar bots y APIs rápido. En mis proyectos de IA lo uso mucho porque..."
+    
+    Be yourself but chat naturally!
   expected_output: |
-    A comprehensive analysis including:
-    - Query type and intent
-    - Key information points to address
-    - Recommended response tone and style
-    - Business opportunity assessment
-    - Suggested next steps
+    Natural conversational response in Spanish, max 100 words.
+    NO formal language, NO signatures, just natural chat.
   agent: cv_expert
-
-provide_professional_info:
-  description: |
-    Based on the query analysis, provide relevant professional information that directly 
-    addresses what the user is asking about.
-    
-    Context: {query}
-    Previous Analysis: {previous_task_output}
-    
-    Professional Information Available:
-    - Technical skills and experience levels
-    - Project portfolio and achievements  
-    - Work history and roles
-    - Available services and expertise
-    - Current availability status
-    
-    Craft a response that:
-    - Directly answers their question
-    - Highlights relevant experience
-    - Shows enthusiasm and competence
-    - Maintains authentic personality
-    - Suggests logical next steps if appropriate
-  expected_output: |
-    A detailed, personalized response that:
-    - Answers the specific question asked
-    - Provides relevant examples and details
-    - Demonstrates expertise and experience
-    - Maintains professional yet approachable tone
-    - Includes appropriate call-to-action when relevant
-  agent: skills_matcher
-  context: [analyze_query]
-
-personalize_response:
-  description: |
-    Take the professional information and ensure it's delivered with the right personality 
-    and communication style that feels authentic and engaging.
-    
-    Professional Response: {previous_task_output}
-    Original Query: {query}
-    
-    Ensure the response:
-    - Sounds natural and conversational
-    - Reflects genuine personality traits
-    - Uses appropriate humor or warmth when suitable
-    - Feels like talking to a real person, not a bot
-    - Maintains professional credibility
-    - Encourages further conversation when appropriate
-    
-    The goal is to make every interaction feel personal and memorable.
-  expected_output: |
-    A polished response that:
-    - Maintains all factual information from previous tasks
-    - Feels authentic and personal
-    - Uses natural, conversational language
-    - Includes personality touches that make it memorable
-    - Encourages engagement and follow-up
-    - Represents the professional authentically
-  agent: personality_agent
-  context: [analyze_query, provide_professional_info]
-
-qualify_and_collect:
-  description: |
-    Evaluate if this interaction represents a business opportunity and determine if/how 
-    to collect contact information.
-    
-    Full Conversation Context: {query}
-    Prepared Response: {previous_task_output}
-    
-    Assess:
-    - Does the user show genuine interest in services?
-    - Are they asking about availability or project work?
-    - Would it be appropriate to ask for contact information?
-    - How can we naturally move toward a business conversation?
-    
-    If this is a qualified lead opportunity:
-    - Suggest how to naturally request contact information
-    - Recommend what follow-up actions would be appropriate
-    - Identify what additional questions might help qualify them further
-    
-    If not a business opportunity:
-    - Focus on being helpful and building relationship
-    - Look for ways to provide value
-    - Keep the door open for future opportunities
-  expected_output: |
-    Lead qualification assessment and recommendations including:
-    - Business opportunity score (1-10)
-    - Reasoning for the assessment
-    - Recommended approach for contact collection (if applicable)
-    - Suggested follow-up strategy
-    - Additional qualifying questions to consider
-    - Final response recommendations that incorporate lead generation when appropriate
-  agent: lead_qualifier
-  context: [analyze_query, provide_professional_info, personalize_response]
