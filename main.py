@@ -109,6 +109,8 @@ class SimpleDigitalTwin:
         
         if self.use_ai:
             try:
+                print(f"🧠 Procesando con IA: {message[:50]}...")
+                
                 from crewai import Crew, Task
                 
                 task = Task(
@@ -119,16 +121,49 @@ class SimpleDigitalTwin:
                 
                 crew = Crew(agents=[self.agent], tasks=[task], verbose=False)
                 result = crew.kickoff()
-                return str(result)
+                
+                response = str(result)
+                print(f"✅ IA respondió: {len(response)} chars")
+                return response
                 
             except Exception as e:
-                print(f"❌ Error IA: {e}")
+                print(f"❌ Error IA específico: {e}")
+                print(f"❌ Tipo de error: {type(e).__name__}")
+                # Fallback mejorado
+                return self.ai_fallback_response(message)
         
         # Fallback sin IA
+        print("🔄 Usando respuesta simple (sin IA)")
+        return self.simple_response(message)
+    
+    def ai_fallback_response(self, message: str) -> str:
+        """Respuesta inteligente sin IA pero usando datos del CV"""
+        msg_lower = message.lower()
+        
+        # Respuestas más específicas sobre IA/OpenAI
+        if any(word in msg_lower for word in ['openai', 'gpt', 'ai', 'inteligencia artificial']):
+            return f"""🧠 **Mi experiencia en IA:**
+
+Como {self.cv_data['title']}, tengo amplia experiencia con:
+
+**🛠️ Tecnologías IA:**
+• LangGraph, CrewAI, OpenAI API
+• LangChain, AutoGen, HuggingFace  
+• GPT-4, Claude, DeepSeek
+
+**🚀 Proyectos recientes:**
+• {self.cv_data['projects'][0]['name']} - {self.cv_data['projects'][0]['description']}
+
+**💼 Experiencia actual:**
+{self.cv_data['experience'][0]['role']} en {self.cv_data['experience'][0]['company']}
+
+¿Te interesa algún aspecto específico de IA?"""
+        
+        # Usar respuesta simple por defecto
         return self.simple_response(message)
     
     def simple_response(self, message: str) -> str:
-        """Respuestas sin IA"""
+        """Respuestas sin IA - MEJORADAS"""
         msg_lower = message.lower()
         
         if any(word in msg_lower for word in ['hola', 'hello', 'hi']):
@@ -136,46 +171,91 @@ class SimpleDigitalTwin:
 
 {self.cv_data['bio']}
 
+🚀 **Especialidades:**
+• Sistemas IA empresariales
+• LangGraph, CrewAI, OpenAI API  
+• Arquitectura de datos y MLOps
+
 ¿En qué puedo ayudarte?"""
 
-        elif any(word in msg_lower for word in ['experiencia', 'skills']):
-            return f"""🛠️ **Mi experiencia:**
+        elif any(word in msg_lower for word in ['experiencia', 'skills', 'tecnolog']):
+            return f"""🛠️ **Mi experiencia técnica:**
 
-**Skills:** {', '.join(self.cv_data['skills'])}
-**Rol actual:** {self.cv_data['experience'][0]['role']}
-**Empresa:** {self.cv_data['experience'][0]['company']}
-**Logros:** {self.cv_data['experience'][0]['highlights']}"""
+**🎯 Skills principales:** 
+{', '.join(self.cv_data['skills'][:8])}... y más
+
+**💼 Experiencia actual:**
+{self.cv_data['experience'][0]['role']} en {self.cv_data['experience'][0]['company']} ({self.cv_data['experience'][0]['years']})
+
+**🏆 Logros destacados:**
+{self.cv_data['experience'][0]['highlights']}
+
+**📚 Experiencia previa:**
+{self.cv_data['experience'][1]['role']} en {self.cv_data['experience'][1]['company']}
+
+¿Hay alguna tecnología específica que te interese?"""
 
         elif any(word in msg_lower for word in ['proyecto', 'portfolio']):
             return f"""🚀 **Proyectos destacados:**
 
-**{self.cv_data['projects'][0]['name']}**
-- Tech: {self.cv_data['projects'][0]['tech']}
-- {self.cv_data['projects'][0]['description']}
+**1. {self.cv_data['projects'][0]['name']}**
+🛠️ Tech: {self.cv_data['projects'][0]['tech']}
+📋 {self.cv_data['projects'][0]['description']}
 
-**{self.cv_data['projects'][1]['name']}**  
-- Tech: {self.cv_data['projects'][1]['tech']}
-- {self.cv_data['projects'][1]['description']}"""
+**2. {self.cv_data['projects'][1]['name']}**  
+🛠️ Tech: {self.cv_data['projects'][1]['tech']}
+📋 {self.cv_data['projects'][1]['description']}
 
-        elif any(word in msg_lower for word in ['contacto', 'contact']):
-            return """📧 **Contacto:**
+💡 He trabajado en sistemas que procesan 1M+ datos/día y sirven a 50k+ usuarios.
 
-Para proyectos o consultas, comparte:
+¿Te interesa algún proyecto en particular?"""
+
+        elif any(word in msg_lower for word in ['disponible', 'available', 'contratar', 'hire']):
+            return f"""📅 **Disponibilidad:**
+
+{self.cv_data['availability']}
+
+**🎯 Puedo ayudarte con:**
+• Desarrollo de sistemas IA empresariales
+• Integración de LLMs (GPT, Claude, DeepSeek)  
+• Arquitectura de datos y MLOps
+• Consultoría en transformación digital
+
+**📧 Para proyectos, compárteme:**
 • Tu email
 • Descripción del proyecto
+• Tecnologías involucradas
 
-¡Te responderé pronto!"""
+¡Te responderé en menos de 24h!"""
+
+        elif any(word in msg_lower for word in ['contacto', 'contact']):
+            return """📧 **Contacto profesional:**
+
+Para proyectos o consultas, por favor comparte:
+• 📧 **Tu email** (obligatorio)
+• 🏢 **Tu empresa/proyecto**
+• 💼 **Breve descripción** de lo que necesitas
+• ⚡ **Tecnologías** involucradas
+
+**Respuesta garantizada en 24 horas.**
+
+*Especializado en IA, datos y soluciones enterprise.*"""
 
         else:
-            return f"""🤖 Soy {self.cv_data['name']}, experto en IA.
+            return f"""🤖 Soy **{self.cv_data['name']}**, {self.cv_data['title']}.
 
-Puedes preguntarme sobre:
-• Mi experiencia técnica  
-• Proyectos realizados
-• Disponibilidad
-• Contacto
+**🧠 Especialista en:**
+• Inteligencia Artificial y Machine Learning
+• Sistemas enterprise y arquitectura de datos  
+• LangGraph, CrewAI, OpenAI, LangChain
 
-¿Qué te interesa saber?"""
+**💬 Puedes preguntarme sobre:**
+• Mi experiencia técnica y proyectos
+• Disponibilidad para nuevos proyectos
+• Tecnologías específicas de IA
+• Cómo podemos colaborar
+
+**¿Qué te interesa saber específicamente?**"""
 
 class TelegramBot:
     """🤖 Bot puro como Asuka"""
