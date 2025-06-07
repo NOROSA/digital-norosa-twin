@@ -1,55 +1,44 @@
-"""Construye y expone el RecruiterAgent basado en el SDK oficial `openai-agents`."""
+# agent/builder.py
+"""RecruiterAgent usando DeepSeek a través del transport chat-completions."""
 
 import os
 from openai import AsyncOpenAI
-from agents import (
-    Agent,
-    Runner,
-    function_tool,
-    set_default_openai_client,
-)
+from agents import Agent, Runner, function_tool
+from agents.models import OpenAIChatCompletionModel   # ← OBJETO DEL SDK
 from agent.cv_loader import load_cv
 
-# ──────────────────────────────
-# 1. Carga el CV en memoria
-# ──────────────────────────────
+# 1. CV en memoria -----------------------------------------------------------------
 _CV_TEXT = load_cv()
-
 
 @function_tool
 def search_cv(query: str) -> str:
-    """Devuelve las primeras 20 líneas del CV que contengan la consulta."""
     q = query.lower()
-    hits = [line for line in _CV_TEXT.splitlines() if q in line.lower()]
+    hits = [l for l in _CV_TEXT.splitlines() if q in l.lower()]
     return "\n".join(hits[:20]) or "No se encontró información en el CV."
 
+# 2. Cliente DeepSeek ---------------------------------------------------------------
+client_ds = AsyncOpenAI(
+    api_key=os.getenv("DEEPSEEK_API_KEY"),
+    base_url=os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1"),
+)
 
-# ──────────────────────────────
-# 2. Construye el agente
-# ──────────────────────────────
+# 3. Modelo chat-completion explícito ----------------------------------------------
+chat_model = OpenAIChatCompletionModel(  # ← siempre usa /chat/completions
+    model="deepseek-chat",
+    client=client_ds,
+)
+
 def build_agent() -> Agent:
-    """Devuelve el agente listo para usar con DeepSeek como backend."""
-    client = AsyncOpenAI(
-        api_key=os.getenv("DEEPSEEK_API_KEY"),           # ← clave nueva
-        base_url=os.getenv("DEEPSEEK_BASE_URL",          # ← url nueva
-                           "https://api.deepseek.com/v1"),
-    )
-    set_default_openai_client(client)
-
     return Agent(
         name="RecruiterAgent",
         instructions=(
             "Eres un asistente experto en la trayectoria profesional de Norbert. "
-            "Cuando necesites hechos concretos, llama a search_cv y responde de forma breve y profesional."
+            "Cuando necesites hechos concretos, llama a search_cv y responde de forma breve y profesional, con un humor amable e inteligente cuando proceda."
         ),
         tools=[search_cv],
-        model="deepseek-chat",
+        model=chat_model,            # ← pasamos el objeto, no un string
     )
 
-
-# ──────────────────────────────
-# 3. Helper asíncrono para Telegram
-# ──────────────────────────────
+# 4. Helper async ------------------------------------------------------------------
 async def chat_async(message: str) -> str:
-    """Obtiene la respuesta del agente de forma asíncrona (compatible con Telegram)."""
     return (await Runner.run(build_agent(), message)).final_output
