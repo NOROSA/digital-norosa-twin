@@ -1,4 +1,4 @@
-# 🤖 Digital Twin Bot - Dependencias con DeepSeek
+# 🤖 Digital Twin Bot - Dependencias con versiones fijas
 
 # CrewAI Framework
 crewai==0.74.0
@@ -15,3 +15,9 @@ openai==1.40.6
 
 # Utilidades básicas
 python-dotenv==1.0.0
+
+# FIX: Forzar NumPy compatible con ChromaDB
+numpy<2.0.0
+
+# FIX: ChromaDB versión estable
+chromadb==0.4.24
