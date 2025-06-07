@@ -1,9 +1,10 @@
-# 🤖 Digital Twin Bot - PLAN C: ULTRA CONSERVATIVE
+# 🤖 Digital Twin Bot - FIX DEFINITIVO Python 3.12
 
-# Sistema base (OBLIGATORIO en Python 3.12)
+# Sistema base COMPLETO (Python 3.12 fix)
 setuptools==69.0.3
 wheel==0.42.0
 pip==23.3.1
+distutils-extra==2.39
 
 # CrewAI versión MUY estable
 crewai==0.55.0
@@ -21,8 +22,10 @@ openai==1.30.0
 # Solo lo esencial
 python-dotenv==1.0.0
 
-# Dependencias mínimas necesarias
+# Dependencias mínimas necesarias (versiones PRE-COMPILADAS)
 numpy==1.23.5
 pydantic==2.3.0
 httpx==0.24.1
 typing-extensions==4.7.1
+six==1.16.0
+certifi==2023.7.22
