@@ -1,23 +1,28 @@
-# 🤖 Digital Twin Bot - Dependencias con versiones fijas
+# 🤖 Digital Twin Bot - PLAN C: ULTRA CONSERVATIVE
 
-# CrewAI Framework
-crewai==0.74.0
+# Sistema base (OBLIGATORIO en Python 3.12)
+setuptools==69.0.3
+wheel==0.42.0
+pip==23.3.1
 
-# Telegram Bot
-python-telegram-bot==20.8
+# CrewAI versión MUY estable
+crewai==0.55.0
 
-# FastAPI para Railway
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
+# Telegram Bot versión probada
+python-telegram-bot==20.6
 
-# DeepSeek API (compatible con OpenAI)
-openai==1.40.6
+# FastAPI minimalista
+fastapi==0.100.1
+uvicorn==0.23.0
 
-# Utilidades básicas
+# OpenAI versión clásica
+openai==1.30.0
+
+# Solo lo esencial
 python-dotenv==1.0.0
 
-# FIX: Forzar NumPy compatible con ChromaDB
-numpy<2.0.0
-
-# FIX: ChromaDB versión estable
-chromadb==0.4.24
+# Dependencias mínimas necesarias
+numpy==1.23.5
+pydantic==2.3.0
+httpx==0.24.1
+typing-extensions==4.7.1
