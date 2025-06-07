@@ -80,60 +80,135 @@ class SimpleDigitalTwin:
         }
     
     def setup_ai(self):
-        """Configurar IA si es posible"""
+        """Configurar IA - DEBUGGING AGRESIVO"""
         try:
-            print("🧠 Configurando IA...")
+            print("🧠 DEBUGGING DEEPSEEK PASO A PASO...")
             
+            # 1. Verificar API Key
+            if not DEEPSEEK_API_KEY or DEEPSEEK_API_KEY == '':
+                print("❌ DEEPSEEK_API_KEY está vacía")
+                self.use_ai = False
+                return
+            
+            print(f"✅ API Key presente: {DEEPSEEK_API_KEY[:10]}...")
+            
+            # 2. Configurar variables
             os.environ["OPENAI_API_KEY"] = DEEPSEEK_API_KEY
             os.environ["OPENAI_API_BASE"] = DEEPSEEK_BASE_URL
+            print(f"✅ Variables configuradas: {DEEPSEEK_BASE_URL}")
             
-            from crewai import Agent, Task
+            # 3. Test directo OpenAI
+            try:
+                print("🧪 Testeando conexión directa OpenAI...")
+                import openai
+                client = openai.OpenAI(
+                    api_key=DEEPSEEK_API_KEY,
+                    base_url=DEEPSEEK_BASE_URL
+                )
+                
+                # Test simple
+                response = client.chat.completions.create(
+                    model="deepseek-chat",
+                    messages=[{"role": "user", "content": "Hola, responde solo 'TEST OK'"}],
+                    max_tokens=10
+                )
+                
+                print(f"✅ OpenAI directo OK: {response.choices[0].message.content}")
+                
+            except Exception as e:
+                print(f"❌ OpenAI directo falló: {e}")
+                self.use_ai = False
+                return
             
-            self.agent = Agent(
-                role='AI Assistant',
-                goal='Help users professionally',
-                backstory=f'You are {self.cv_data["name"]}, an AI expert.',
-                verbose=False,
-                allow_delegation=False
-            )
+            # 4. Importar CrewAI
+            try:
+                print("📦 Importando CrewAI...")
+                from crewai import Agent, Task
+                print("✅ CrewAI importado")
+            except Exception as e:
+                print(f"❌ Error importando CrewAI: {e}")
+                self.use_ai = False
+                return
+            
+            # 5. Crear agente simple
+            try:
+                print("🤖 Creando agente...")
+                self.agent = Agent(
+                    role='AI Assistant',
+                    goal='Help users professionally',
+                    backstory=f'You are {self.cv_data["name"]}, an AI expert.',
+                    verbose=False,
+                    allow_delegation=False,
+                    llm="deepseek-chat"  # Especificar modelo explícitamente
+                )
+                print("✅ Agente creado")
+            except Exception as e:
+                print(f"❌ Error creando agente: {e}")
+                self.use_ai = False
+                return
             
             self.use_ai = True
-            print("✅ IA configurada")
+            print("🎯 IA CONFIGURADA CORRECTAMENTE")
             
         except Exception as e:
-            print(f"⚠️ IA falló: {e}")
+            print(f"💥 Error general en setup_ai: {e}")
+            import traceback
+            traceback.print_exc()
             self.use_ai = False
     
     async def process_query(self, message: str) -> str:
-        """Procesa consulta"""
+        """Procesa consulta - DEBUGGING AGRESIVO"""
+        
+        print(f"🔍 Procesando: '{message}' - IA habilitada: {self.use_ai}")
         
         if self.use_ai:
             try:
-                print(f"🧠 Procesando con IA: {message[:50]}...")
+                print("🧠 USANDO IA - Creando crew...")
                 
                 from crewai import Crew, Task
                 
+                # Crear tarea específica
                 task = Task(
-                    description=f'Respond professionally as {self.cv_data["name"]}: {message}',
+                    description=f"""Respond professionally as {self.cv_data["name"]}, Senior AI Engineer.
+                    
+                    User question: {message}
+                    
+                    Context: You are an AI expert working at VEOLIA with deep experience in LangGraph, CrewAI, OpenAI API.
+                    
+                    Respond in Spanish, professionally, mentioning specific experience when relevant.""",
                     agent=self.agent,
-                    expected_output='Professional response'
+                    expected_output='Professional response in Spanish'
                 )
                 
-                crew = Crew(agents=[self.agent], tasks=[task], verbose=False)
+                print("✅ Tarea creada")
+                
+                # Crear crew temporal
+                crew = Crew(
+                    agents=[self.agent], 
+                    tasks=[task], 
+                    verbose=True  # Activar verbose para debugging
+                )
+                
+                print("✅ Crew creado - Ejecutando...")
+                
+                # Ejecutar
                 result = crew.kickoff()
                 
                 response = str(result)
-                print(f"✅ IA respondió: {len(response)} chars")
+                print(f"🎯 IA RESPONDIÓ: {response[:100]}...")
                 return response
                 
             except Exception as e:
-                print(f"❌ Error IA específico: {e}")
-                print(f"❌ Tipo de error: {type(e).__name__}")
-                # Fallback mejorado
+                print(f"💥 ERROR EN IA: {e}")
+                print(f"📋 Tipo error: {type(e).__name__}")
+                import traceback
+                traceback.print_exc()
+                
+                print("🔄 Cayendo a fallback...")
                 return self.ai_fallback_response(message)
         
-        # Fallback sin IA
-        print("🔄 Usando respuesta simple (sin IA)")
+        # Sin IA
+        print("🔄 Usando respuesta simple (IA deshabilitada)")
         return self.simple_response(message)
     
     def ai_fallback_response(self, message: str) -> str:
@@ -342,11 +417,21 @@ Pregúntame sobre:
     async def cleanup_and_start(self):
         """Limpia conexiones y arranca"""
         try:
+            # Identificador único de instancia
+            import uuid
+            instance_id = str(uuid.uuid4())[:8]
+            print(f"🤖 Instancia ID: {instance_id}")
+            
             print("🧹 Limpiando conexiones previas...")
             
-            # Limpiar webhooks y updates pendientes
+            # Cleanup más agresivo
             await self.app.bot.delete_webhook(drop_pending_updates=True)
             await self.app.bot.get_updates(offset=-1, limit=1, timeout=1)
+            
+            # Esperar un poco para evitar race conditions
+            import asyncio
+            await asyncio.sleep(2)
+            
             print("✅ Conexiones limpiadas")
             
         except Exception as e:
@@ -355,7 +440,7 @@ Pregúntame sobre:
         print("🎯 Iniciando polling...")
     
     def start_bot(self):
-        """Inicia el bot de forma síncrona"""
+        """Inicia el bot con gestión de instancias múltiples"""
         # Usar el loop existente en lugar de crear uno nuevo
         try:
             # Obtener loop existente
@@ -364,13 +449,34 @@ Pregúntame sobre:
             # Hacer cleanup primero
             loop.run_until_complete(self.cleanup_and_start())
             
-            # Iniciar polling sin crear nuevo loop
-            self.app.run_polling(drop_pending_updates=True)
+            # Configurar resilencia ante conflictos
+            print("🔄 Iniciando con gestión de conflictos...")
+            
+            # Polling con reintentos automáticos
+            while True:
+                try:
+                    self.app.run_polling(
+                        drop_pending_updates=True,
+                        timeout=10,  # Timeout más corto
+                        poll_interval=2.0,  # Intervalo entre polls
+                        bootstrap_retries=-1  # Reintentos infinitos
+                    )
+                    break  # Si llega aquí, funcionó
+                    
+                except Exception as e:
+                    if "getUpdates request" in str(e) or "Conflict" in str(e):
+                        print("⚠️ Conflicto detectado - esperando y reintentando...")
+                        import time
+                        time.sleep(5)  # Esperar 5 segundos
+                        continue
+                    else:
+                        print(f"❌ Error no relacionado con conflicto: {e}")
+                        raise e
             
         except RuntimeError as e:
             if "event loop is already running" in str(e):
                 print("⚠️ Event loop ya corriendo - modo alternativo")
-                # Modo alternativo sin loop
+                # Modo alternativo directo
                 self.app.run_polling(drop_pending_updates=True)
             else:
                 raise e
