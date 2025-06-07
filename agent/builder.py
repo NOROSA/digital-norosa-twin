@@ -1,33 +1,48 @@
 import os
-import openai
-from openai_agents import AgentBuilder, DocumentSearchTool
+from openai import AsyncOpenAI
+from agents import (
+    Agent,
+    Runner,
+    function_tool,
+    set_default_openai_client,
+)
 from agent.cv_loader import load_cv
 
+# ──────────────────────────────
+# 1. Carga tu CV una sola vez
+# ──────────────────────────────
+_docs = load_cv()
+_CV_TEXT = "\n".join(doc.content for doc in _docs)
 
-def build_agent():
-    # Configura el SDK para DeepSeek
-    openai.api_key = os.getenv("OPENAI_API_KEY")
-    openai.base_url = os.getenv("OPENAI_BASE_URL", "https://api.deepseek.com/v1")
+@function_tool
+def search_cv(query: str) -> str:
+    """Devuelve hasta 20 líneas del CV relevantes para la consulta."""
+    q = query.lower()
+    hits = [line for line in _CV_TEXT.splitlines() if q in line.lower()]
+    return "\n".join(hits[:20]) or "No se encontró información en el CV."
 
-    # 1) Carga tu CV y créa un DocumentSearchTool muy simple
-    documents = load_cv()  # -> [Document(...), ...]
-    search_tool = DocumentSearchTool.from_documents(
-        documents,
-        name="Curriculum",
-        description="Busca datos concretos sobre la carrera del usuario"
+# ──────────────────────────────
+# 2. Construye el agente
+# ──────────────────────────────
+def build_agent() -> Agent:
+    client = AsyncOpenAI(
+        api_key=os.getenv("OPENAI_API_KEY"),
+        base_url=os.getenv("OPENAI_BASE_URL", "https://api.deepseek.com/v1"),
     )
+    set_default_openai_client(client)
 
-    # 2) Monta el agente
-    builder = AgentBuilder(
+    recruiter = Agent(
         name="RecruiterAgent",
-        llm_model="deepseek-chat",  # Cambia si usas otro
-        description="Asistente que responde dudas sobre la trayectoria profesional del usuario."
+        instructions=(
+            "Eres un asistente experto en la trayectoria profesional del usuario. "
+            "Cuando necesites hechos concretos, llama a search_cv. "
+            "Responde siempre de forma breve, honesta y profesional."
+        ),
+        tools=[search_cv],
+        model="deepseek-chat",
     )
-    builder.add_tool(search_tool)
-    builder.set_system_prompt(
-        "Eres un asistente experto en la trayectoria profesional de tu usuario. "
-        "Usa exclusivamente la información del Curriculum para responder de forma breve, honesta y profesional. "
-        "Si no sabes algo, reconoce tu desconocimiento."
-    )
+    return recruiter
 
-    return builder.build()
+# Helper síncrono para servicios que no sean async (p.ej. Telegram)
+def chat_sync(message: str) -> str:
+    return Runner.run_sync(build_agent(), message).final_output
