@@ -119,96 +119,187 @@ class DigitalTwin:
         }
     
     def setup_crew(self):
-        """Configura el crew usando archivos YAML nativos con DeepSeek"""
+        """Configura el crew con debugging completo para Railway"""
         try:
-            # SOLUCIÓN CORREGIDA: Usar archivos YAML directamente
-            # CrewAI buscará automáticamente agents.yaml y tasks.yaml en la carpeta actual
-            # o en la carpeta config/
+            print("🔍 DEBUGGING CREW SETUP EN RAILWAY:")
             
-            # Verificar que los archivos YAML existan
+            # 1. Verificar variables de entorno críticas
+            print(f"📋 DEEPSEEK_API_KEY configurada: {bool(DEEPSEEK_API_KEY)}")
+            print(f"📋 DEEPSEEK_BASE_URL: {DEEPSEEK_BASE_URL}")
+            print(f"📋 Variables OpenAI: {bool(os.getenv('OPENAI_API_KEY'))}")
+            
+            # 2. Verificar archivos YAML
             import os
+            current_dir = os.getcwd()
+            print(f"📁 Directorio actual: {current_dir}")
+            
+            # Listar archivos en el directorio
+            files = os.listdir('.')
+            print(f"📁 Archivos en directorio: {files}")
+            
             yaml_files = ['agents.yaml', 'tasks.yaml']
-            config_files = ['config/agents.yaml', 'config/tasks.yaml']
+            yaml_exists = {}
+            for file in yaml_files:
+                exists = os.path.exists(file)
+                yaml_exists[file] = exists
+                print(f"📄 {file}: {'✅ EXISTE' if exists else '❌ NO EXISTE'}")
+                
+                if exists:
+                    # Verificar que se puede leer
+                    try:
+                        with open(file, 'r', encoding='utf-8') as f:
+                            content = f.read()
+                            print(f"📄 {file} size: {len(content)} chars")
+                    except Exception as e:
+                        print(f"❌ Error leyendo {file}: {e}")
             
-            # Buscar archivos YAML
-            yaml_found = all(os.path.exists(f) for f in yaml_files)
-            config_found = all(os.path.exists(f) for f in config_files)
-            
-            if yaml_found:
-                # Archivos en directorio raíz
-                print("✅ Usando archivos YAML en directorio raíz")
-                self.crew = Crew()
-            elif config_found:
-                # Archivos en carpeta config/
-                print("✅ Usando archivos YAML en carpeta config/")
-                self.crew = Crew(config_path="config")
+            # 3. Intentar crear crew
+            if all(yaml_exists.values()):
+                print("🚀 Intentando crear Crew con archivos YAML...")
+                try:
+                    # Asegurarse de que las variables de entorno estén configuradas
+                    if not os.getenv('OPENAI_API_KEY'):
+                        os.environ["OPENAI_API_KEY"] = DEEPSEEK_API_KEY
+                        print("✅ OPENAI_API_KEY configurada para DeepSeek")
+                    
+                    if not os.getenv('OPENAI_API_BASE'):
+                        os.environ["OPENAI_API_BASE"] = DEEPSEEK_BASE_URL
+                        print("✅ OPENAI_API_BASE configurada para DeepSeek")
+                    
+                    # Crear crew con timeout
+                    import signal
+                    
+                    def timeout_handler(signum, frame):
+                        raise TimeoutError("Crew creation timed out")
+                    
+                    signal.signal(signal.SIGALRM, timeout_handler)
+                    signal.alarm(30)  # 30 segundos timeout
+                    
+                    try:
+                        self.crew = Crew()
+                        signal.alarm(0)  # Cancelar timeout
+                        print("✅ Crew creado exitosamente con YAML")
+                        return
+                    except TimeoutError:
+                        print("⏰ Timeout creando Crew - usando fallback")
+                        signal.alarm(0)
+                        self.crew = self.create_programmatic_crew()
+                        return
+                    
+                except Exception as e:
+                    print(f"❌ Error creando Crew con YAML: {e}")
+                    print("🔄 Fallback a configuración programática...")
+                    self.crew = self.create_programmatic_crew()
+                    return
             else:
-                # No hay archivos YAML, crear crew programáticamente
-                print("⚠️ No se encontraron archivos YAML, usando configuración por código")
-                self.crew = self.create_fallback_crew()
-            
-            print("✅ CrewAI configurado correctamente")
+                print("❌ Archivos YAML no encontrados - usando configuración programática")
+                self.crew = self.create_programmatic_crew()
+                return
             
         except Exception as e:
-            print(f"Error setting up crew: {e}")
-            print("🔄 Intentando configuración fallback...")
-            self.crew = self.create_fallback_crew()
+            print(f"💥 Error general en setup_crew: {e}")
+            import traceback
+            traceback.print_exc()
+            print("🔄 Fallback final a respuestas simples")
+            self.crew = None
     
-    def create_fallback_crew(self):
-        """Crea crew programáticamente si no hay archivos YAML"""
-        from crewai import Agent, Task
-        
+    def create_programmatic_crew(self):
+        """Crea crew programáticamente con configuración completa de Norbert"""
         try:
-            # Crear agente principal
-            cv_agent = Agent(
-                role='Professional CV Expert & Representative',
-                goal=f'Act as the professional representative of {self.cv_data["name"]}, showcasing experience and skills',
-                backstory=f'''You are the virtual representative of {self.cv_data["name"]}, a skilled {self.cv_data["title"]}. 
-                You know their complete career history, technical skills: {", ".join(self.cv_data["skills"])}, 
-                and professional achievements.
+            print("🛠️ Creando crew programático...")
+            
+            # Import con timeout
+            import signal
+            
+            def import_timeout(signum, frame):
+                raise TimeoutError("Import timed out")
+            
+            signal.signal(signal.SIGALRM, import_timeout)
+            signal.alarm(10)  # 10 segundos para import
+            
+            try:
+                from crewai import Agent, Task
+                signal.alarm(0)  # Cancelar timeout
+            except TimeoutError:
+                print("⏰ Timeout en import CrewAI")
+                return None
+            except Exception as e:
+                print(f"❌ Error importando CrewAI: {e}")
+                return None
+                        
+            # AGENTE PRINCIPAL - Norbert's Digital Twin
+            norbert_agent = Agent(
+                role='Senior AI Engineer & Professional Representative',
+                goal=f'Represent {self.cv_data["name"]} professionally and generate quality leads',
+                backstory=f'''You ARE {self.cv_data["name"]}, a {self.cv_data["title"]} from {self.cv_data["location"]}.
                 
-                Personality: {self.cv_data["personality"]}
+                BACKGROUND: {self.cv_data["bio"]}
                 
-                You should:
-                - Speak in first person as if you ARE {self.cv_data["name"]}
-                - Be enthusiastic about technical projects
-                - Highlight relevant experience for each question
-                - Show personality while maintaining professionalism
-                - Suggest next steps when someone shows interest''',
+                PERSONALITY: {self.cv_data["personality"]}
+                
+                TECHNICAL EXPERTISE: You have deep experience with {len(self.cv_data["skills"])} technologies including:
+                - AI/ML: LangGraph, CrewAI, OpenAI API, LangChain, AutoGen, HuggingFace
+                - Languages: Python, Java, JavaScript, PHP
+                - Cloud: AWS, GCP, Azure
+                - Data: Snowflake, BigQuery, Airflow
+                - And many more: {", ".join(self.cv_data["skills"][:10])}...
+                
+                RECENT PROJECTS: You've built enterprise AI systems for 50k+ users, ML platforms processing 1M+ data points daily, and intelligent data orchestration suites.
+                
+                COMMUNICATION STYLE:
+                - Speak in first person as Norbert
+                - Be enthusiastic about AI and complex technical challenges
+                - Show deep expertise while remaining approachable
+                - Highlight relevant experience for each inquiry
+                - Identify business opportunities naturally
+                - Be authentic and passionate about technology
+                
+                Always represent Norbert's extensive AI expertise and leadership experience accurately.''',
                 verbose=True,
-                allow_delegation=False
+                allow_delegation=False,
+                max_iter=3
             )
             
-            # Crear tarea principal
+            # TAREA PRINCIPAL - Respuesta profesional completa
             response_task = Task(
-                description='''Analyze the user query and provide a comprehensive professional response.
+                description='''Analyze the user's query and provide a comprehensive, professional response as Norbert.
                 
-                User Query: {query}
+                AVAILABLE CONTEXT:
+                - Complete professional background and experience
+                - Technical skills across AI, data, cloud, and development
+                - Detailed project portfolio including enterprise AI systems
+                - Current availability and interests
+                - User's specific query and intent
                 
-                Professional Context Available:
-                - Technical skills and experience
-                - Project portfolio and achievements
-                - Work history and current availability
+                RESPONSE REQUIREMENTS:
+                1. Analyze what the user is asking about
+                2. Provide relevant technical details from Norbert's experience
+                3. Show enthusiasm for the technology/project mentioned
+                4. Share specific examples from relevant projects when appropriate
+                5. Maintain Norbert's authentic personality and communication style
+                6. If user shows business interest, naturally guide toward contact exchange
+                7. Keep response engaging, informative, and under 300 words
                 
-                Provide a response that:
-                - Directly answers their question
-                - Highlights relevant experience
-                - Shows enthusiasm and competence
-                - Maintains authentic personality
-                - Suggests logical next steps if appropriate''',
-                agent=cv_agent,
-                expected_output='A personalized, professional response that addresses the query and represents the professional authentically'
+                USER QUERY: {query}
+                
+                Respond as Norbert would - technical, enthusiastic, and professional.''',
+                agent=norbert_agent,
+                expected_output='A personalized response from Norbert that addresses the query with relevant technical expertise, specific examples, and authentic personality while identifying potential business opportunities'
             )
             
-            # Crear crew
-            return Crew(
-                agents=[cv_agent],
+            # CREAR CREW
+            crew = Crew(
+                agents=[norbert_agent],
                 tasks=[response_task],
-                verbose=True
+                verbose=True,
+                memory=False  # Disable memory for Railway to avoid issues
             )
+            
+            print("✅ Programmatic crew created successfully")
+            return crew
             
         except Exception as e:
-            print(f"Error creating fallback crew: {e}")
+            print(f"Error creating programmatic crew: {e}")
             return None
     
     async def process_query(self, user_message: str, context: str = "") -> str:
