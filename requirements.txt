@@ -1,20 +1,6 @@
-# 🤖 CrewAI DEFINITIVO - TODAS LAS VERSIONES COMPATIBLES 2024
-
-# Python base
-setuptools==69.0.3
-
-# CrewAI - VERSIÓN QUE SÍ EXISTE (última estable)
-crewai==0.126.0
-
-# Telegram Bot - VERSIÓN ACTUALIZADA que usa httpx ~= 0.27
-python-telegram-bot==22.1
-
-# FastAPI - VERSIÓN COMPATIBLE con ChromaDB
-fastapi==0.115.9
-uvicorn==0.32.1
-
-# OpenAI compatible con DeepSeek - VERSIÓN FINAL que resuelve todos los conflictos
-openai==1.68.2
-
-# Utilidades básicas
-python-dotenv==1.0.0
+openai>=1.25.0          # SDK oficial
+openai-agents>=0.2.0    # Framework Agents (Preview)
+python-telegram-bot>=21.0
+python-dotenv>=1.0
+pdfplumber>=0.10
+faiss-cpu>=1.7.4        # memoria vectorial sencilla (opcional)
