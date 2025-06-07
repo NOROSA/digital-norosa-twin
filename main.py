@@ -211,6 +211,23 @@ class SimpleTelegramBot:
         self.setup_handlers()
         print("✅ Bot inicializado")
     
+    async def cleanup_previous_connections(self):
+        """Limpia conexiones previas como hacía Asuka"""
+        try:
+            print("🧹 Limpiando conexiones previas...")
+            
+            # Eliminar webhook si existe
+            await self.app.bot.delete_webhook(drop_pending_updates=True)
+            print("✅ Webhook eliminado")
+            
+            # Limpiar updates pendientes
+            await self.app.bot.get_updates(offset=-1, limit=1, timeout=1)
+            print("✅ Updates pendientes limpiados")
+            
+        except Exception as e:
+            print(f"⚠️ Error en cleanup: {e}")
+            # No es crítico, continuar
+    
     def setup_handlers(self):
         """Handlers básicos"""
         self.app.add_handler(CommandHandler("start", self.start_command))
@@ -251,16 +268,11 @@ class SimpleTelegramBot:
 # Lifespan para FastAPI
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Startup/shutdown"""
+    """Startup/shutdown - SIN webhooks como Asuka"""
     print("🚀 FastAPI iniciando...")
     
-    if WEBHOOK_URL:
-        try:
-            webhook_url = f"{WEBHOOK_URL}/webhook/{TELEGRAM_TOKEN}"
-            await bot.app.bot.set_webhook(webhook_url)
-            print(f"✅ Webhook: {webhook_url}")
-        except Exception as e:
-            print(f"⚠️ Error webhook: {e}")
+    # NO configurar webhooks - usar polling como Asuka
+    print("🔄 Modo polling como Asuka (sin webhooks)")
     
     yield
     print("🔄 FastAPI cerrando...")
@@ -304,11 +316,17 @@ async def test():
 
 if __name__ == "__main__":
     print("🚀 INICIANDO APLICACIÓN...")
+    print("🔄 Modo Asuka (polling con cleanup)")
     
-    if WEBHOOK_URL:
-        print("🌐 Modo producción (webhook)")
-        import uvicorn
-        uvicorn.run(app, host="0.0.0.0", port=PORT)
-    else:
-        print("🔄 Modo desarrollo (polling)")
-        bot.app.run_polling()
+    async def run_bot_with_cleanup():
+        """Ejecuta el bot con cleanup previo como Asuka"""
+        await bot.cleanup_previous_connections()
+        print("🎯 Iniciando polling...")
+        bot.app.run_polling(
+            drop_pending_updates=True,  # Como Asuka
+            close_loop=False
+        )
+    
+    # Ejecutar bot con cleanup
+    import asyncio
+    asyncio.run(run_bot_with_cleanup())
