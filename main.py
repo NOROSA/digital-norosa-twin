@@ -45,48 +45,77 @@ class DigitalTwin:
         self.setup_crew()
     
     def load_cv_data(self) -> Dict[str, Any]:
-        """Carga tu información profesional desde VARIABLES DE ENTORNO (seguro)"""
+        """Carga tu información profesional COMPLETA desde VARIABLES DE ENTORNO"""
         return {
-            "name": os.getenv('CV_NAME', 'Tu Nombre'),
-            "title": os.getenv('CV_TITLE', 'Senior Full Stack Developer'),
+            "name": os.getenv('CV_NAME', 'Norbert Rodríguez Sagarra'),
+            "title": os.getenv('CV_TITLE', 'Senior AI Engineer & Intelligent Apps Project Manager'),
             "location": os.getenv('CV_LOCATION', 'Barcelona, España'),
-            "bio": os.getenv('CV_BIO', 'Desarrollador con +5 años creando soluciones web innovadoras'),
-            "personality": os.getenv('CV_PERSONALITY', 'Directo, entusiasta, con sentido del humor'),
+            "bio": os.getenv('CV_BIO', 'Apasionado por la IA, datos y eficiencia...'),
+            "personality": os.getenv('CV_PERSONALITY', 'Analítico, innovador, estratégico...'),
             
-            # Skills como string separado por comas
-            "skills": os.getenv('CV_SKILLS', 'Python,JavaScript,React,FastAPI,AWS').split(','),
+            # Skills completos
+            "skills": os.getenv('CV_SKILLS', 'Python,LangGraph,CrewAI,OpenAI API,LangChain').split(','),
             
-            # Experiencia (formato simple)
+            # TODAS las experiencias (3 completas)
             "experience": [
                 {
-                    "company": os.getenv('CV_EXP1_COMPANY', 'Tech Startup'),
-                    "role": os.getenv('CV_EXP1_ROLE', 'Senior Developer'),
-                    "years": os.getenv('CV_EXP1_YEARS', '2022-2024'),
-                    "highlights": os.getenv('CV_EXP1_HIGHLIGHTS', 'Lideré equipo, reduje latencia 40%, implementé CI/CD')
+                    "company": os.getenv('CV_EXP1_COMPANY', 'VEOLIA-AGBAR-SYNECTIC (DEVOTEAM)'),
+                    "role": os.getenv('CV_EXP1_ROLE', 'Senior AI Engineer & Project Manager'),
+                    "years": os.getenv('CV_EXP1_YEARS', '2021-2024'),
+                    "highlights": os.getenv('CV_EXP1_HIGHLIGHTS', 'Diseño e implementación de agentes IA avanzados...')
                 },
                 {
-                    "company": os.getenv('CV_EXP2_COMPANY', 'Consultora Digital'),
-                    "role": os.getenv('CV_EXP2_ROLE', 'Full Stack Developer'),
-                    "years": os.getenv('CV_EXP2_YEARS', '2020-2022'),
-                    "highlights": os.getenv('CV_EXP2_HIGHLIGHTS', 'Desarrollé 8+ proyectos cliente, stack MERN especialista')
+                    "company": os.getenv('CV_EXP2_COMPANY', 'IBM Collaborative Projects (Freelance)'),
+                    "role": os.getenv('CV_EXP2_ROLE', 'AI Solutions Architect & Team Lead'),
+                    "years": os.getenv('CV_EXP2_YEARS', '2017-2022'),
+                    "highlights": os.getenv('CV_EXP2_HIGHLIGHTS', 'Liderazgo de proyectos IA con Watson...')
+                },
+                {
+                    "company": os.getenv('CV_EXP3_COMPANY', 'Enterprise Consulting & Training'),
+                    "role": os.getenv('CV_EXP3_ROLE', 'Tech Lead & Mobile Solutions Architect'),
+                    "years": os.getenv('CV_EXP3_YEARS', '2017'),
+                    "highlights": os.getenv('CV_EXP3_HIGHLIGHTS', 'Liderazgo de equipos desarrollo Android/iOS...')
                 }
             ],
             
-            # Proyectos
+            # TODOS los proyectos (5 completos)
             "projects": [
                 {
-                    "name": os.getenv('CV_PROJ1_NAME', 'E-commerce Platform'),
-                    "tech": os.getenv('CV_PROJ1_TECH', 'React + FastAPI + PostgreSQL'),
-                    "description": os.getenv('CV_PROJ1_DESC', 'Plataforma con +10k usuarios activos')
+                    "name": os.getenv('CV_PROJ1_NAME', 'Enterprise AI Assistant Ecosystem'),
+                    "tech": os.getenv('CV_PROJ1_TECH', 'LangGraph + CrewAI + Multiple LLMs + FastAPI + Snowflake'),
+                    "description": os.getenv('CV_PROJ1_DESC', 'Sistema completo de asistentes IA para 50k+ empleados...')
                 },
                 {
-                    "name": os.getenv('CV_PROJ2_NAME', 'AI Chat Assistant'),
-                    "tech": os.getenv('CV_PROJ2_TECH', 'Python + OpenAI + Telegram'),
-                    "description": os.getenv('CV_PROJ2_DESC', 'Bot inteligente con 95% satisfacción usuario')
+                    "name": os.getenv('CV_PROJ2_NAME', 'AI-Powered Hydroelectric Prediction Platform'),
+                    "tech": os.getenv('CV_PROJ2_TECH', 'Python + TensorFlow + BigQuery + Airflow + PowerBI + GCP'),
+                    "description": os.getenv('CV_PROJ2_DESC', 'Plataforma ML para predicción energía hidroeléctrica...')
+                },
+                {
+                    "name": os.getenv('CV_PROJ3_NAME', 'Intelligent Data Orchestration Suite'),
+                    "tech": os.getenv('CV_PROJ3_TECH', 'Talend + DBT + Spark + SCADA + LangChain + Vector DBs'),
+                    "description": os.getenv('CV_PROJ3_DESC', 'Orquestación inteligente datos multi-origen con IA...')
+                },
+                {
+                    "name": os.getenv('CV_PROJ4_NAME', 'AI-Enhanced Enterprise Data Mining'),
+                    "tech": os.getenv('CV_PROJ4_TECH', 'Python + Watson + Beautiful Soup + Apache Kafka + MLOps'),
+                    "description": os.getenv('CV_PROJ4_DESC', 'Sistema scraping B2B con IA para análisis competencia...')
+                },
+                {
+                    "name": os.getenv('CV_PROJ5_NAME', 'Cybersecurity AI Analyst'),
+                    "tech": os.getenv('CV_PROJ5_TECH', 'Python + Metasploit + NMAP + LangChain + Vector Search'),
+                    "description": os.getenv('CV_PROJ5_DESC', 'Asistente IA para análisis vulnerabilidades...')
                 }
             ],
             
-            "availability": os.getenv('CV_AVAILABILITY', 'Disponible para proyectos freelance')
+            # Información adicional completa
+            "availability": os.getenv('CV_AVAILABILITY', 'Disponible para proyectos de IA, consultoría y transformación digital'),
+            "education": os.getenv('CV_EDUCATION', 'BSc Data Science (UCM), Master Prompt Engineering...'),
+            "ai_specialties": os.getenv('CV_AI_SPECIALTIES', 'LLM Orchestration,Agentic Workflows,RAG Systems...').split(','),
+            "achievements": os.getenv('CV_ACHIEVEMENTS', 'Modernized legacy data ecosystems...'),
+            "values": os.getenv('CV_VALUES', 'Driven by making the world better through useful technology...'),
+            "languages": os.getenv('CV_LANGUAGES', 'Español (nativo), Catalán (nativo), Inglés (B2)'),
+            "additional_projects": os.getenv('CV_ADDITIONAL_PROJECTS', 'CrewAI Multi-Agent Trading Bot...'),
+            "additional_info": os.getenv('CV_ADDITIONAL_INFO', 'GitHub: n0r0s4, Kaggle: n0r0s4...')
         }
     
     def setup_crew(self):
@@ -189,41 +218,61 @@ class DigitalTwin:
             try:
                 # Preparar contexto completo para los agentes
                 professional_context = f"""
-                INFORMACIÓN PROFESIONAL COMPLETA:
+                INFORMACIÓN PROFESIONAL COMPLETA DE NORBERT:
                 
                 Nombre: {self.cv_data['name']}
                 Título: {self.cv_data['title']}
                 Ubicación: {self.cv_data['location']}
                 Bio: {self.cv_data['bio']}
                 Personalidad: {self.cv_data['personality']}
+                Disponibilidad: {self.cv_data['availability']}
                 
-                SKILLS TÉCNICOS:
+                SKILLS TÉCNICOS ({len(self.cv_data['skills'])} tecnologías):
                 {', '.join(self.cv_data['skills'])}
                 
-                EXPERIENCIA LABORAL:
+                ESPECIALIDADES IA:
+                {', '.join(self.cv_data.get('ai_specialties', []))}
+                
+                EXPERIENCIA LABORAL COMPLETA:
                 """
                 
-                for exp in self.cv_data['experience']:
+                for i, exp in enumerate(self.cv_data['experience'], 1):
                     professional_context += f"""
-                • {exp['role']} en {exp['company']} ({exp['years']})
-                  Logros: {exp['highlights']}
+                {i}. {exp['role']} en {exp['company']} ({exp['years']})
+                   Logros: {exp['highlights']}
                 """
                 
                 professional_context += f"""
                 
-                PROYECTOS DESTACADOS:
+                PROYECTOS DESTACADOS COMPLETOS ({len(self.cv_data['projects'])} proyectos):
                 """
                 
-                for project in self.cv_data['projects']:
+                for i, project in enumerate(self.cv_data['projects'], 1):
                     professional_context += f"""
-                • {project['name']} - {project['tech']}
-                  {project['description']}
+                {i}. {project['name']} 
+                   Tech Stack: {project['tech']}
+                   Descripción: {project['description']}
                 """
                 
                 professional_context += f"""
                 
-                DISPONIBILIDAD ACTUAL:
-                {self.cv_data['availability']}
+                EDUCACIÓN Y CERTIFICACIONES:
+                {self.cv_data.get('education', 'Información educativa completa disponible')}
+                
+                LOGROS Y RECONOCIMIENTOS:
+                {self.cv_data.get('achievements', 'Múltiples logros en transformación digital')}
+                
+                FILOSOFÍA Y VALORES:
+                {self.cv_data.get('values', 'Orientado a soluciones tecnológicas útiles')}
+                
+                IDIOMAS:
+                {self.cv_data.get('languages', 'Multilingüe')}
+                
+                PROYECTOS ADICIONALES:
+                {self.cv_data.get('additional_projects', 'Múltiples proyectos paralelos')}
+                
+                INFORMACIÓN ADICIONAL:
+                {self.cv_data.get('additional_info', 'Activo en comunidad tech')}
                 
                 CONSULTA DEL USUARIO:
                 {user_message}
