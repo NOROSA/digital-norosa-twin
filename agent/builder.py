@@ -9,6 +9,7 @@ from agents import (
     OpenAIChatCompletionsModel,   # ← nombre EXACTO del SDK 0.0.17
 )
 from agent.cv_loader import load_cv
+from agent.guardrails import on_topic_guardrail
 
 # 1 ── Metemos TODO tu CV en memoria (sin cortes)
 CV_TEXT = load_cv()
@@ -39,6 +40,7 @@ def build_agent() -> Agent:
             "===== FIN DEL CV ====="
         ),
         model=chat_model,
+        input_guardrails=[on_topic_guardrail], 
     )
 
 # 5 ── Helper async para Telegram ------------------------------------------
