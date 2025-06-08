@@ -6,27 +6,27 @@ from agents import (
     Agent,
     Runner,
     function_tool,
-    OpenAIChatCompletionsModel,   # ← nombre EXACTO del SDK 0.0.17
+    OpenAIChatCompletionsModel,
 )
 from agent.cv_loader import load_cv
-from agent.guardrails import on_topic_guardrail
+from agent.guardrails import stay_on_topic        # ← NUEVO
 
-# 1 ── Metemos TODO tu CV en memoria (sin cortes)
+# 1 ── Carga TODO el CV en memoria
 CV_TEXT = load_cv()
 
-# 2 ── Cliente DeepSeek ------------------------------------------------------
+# 2 ── Cliente DeepSeek
 client_ds = AsyncOpenAI(
     api_key=os.getenv("DEEPSEEK_API_KEY"),
     base_url=os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1"),
 )
 
-# 3 ── Modelo chat-completions explícito (usa /chat/completions) ------------
-chat_model = OpenAIChatCompletionsModel(      # ✅ plural + param correcto
+# 3 ── Modelo chat-completions
+chat_model = OpenAIChatCompletionsModel(
     model="deepseek-chat",
     openai_client=client_ds,
 )
 
-# 4 ── Agente ---------------------------------------------------------------
+# 4 ── Construcción del agente con rail
 def build_agent() -> Agent:
     return Agent(
         name="RecruiterAgent",
@@ -40,10 +40,10 @@ def build_agent() -> Agent:
             "===== FIN DEL CV ====="
         ),
         model=chat_model,
-        input_guardrails=[on_topic_guardrail], 
+        input_guardrails=[stay_on_topic],   # ← rail activo
     )
 
-# 5 ── Helper async para Telegram ------------------------------------------
+# 5 ── Helper async para Telegram
 async def chat_async(message: str) -> str:
     result = await Runner.run(build_agent(), message)
     return result.final_output
