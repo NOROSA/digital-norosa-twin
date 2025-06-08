@@ -1,49 +1,41 @@
-"""RecruiterAgent — DeepSeek a través de OpenAI-Agents (chat-completions)."""
+"""RecruiterAgent — DeepSeek vía OpenAI-Agents (chat-completions)."""
 
 import os
-from openai import AsyncOpenAI
 from agents import (
     Agent,
     Runner,
-    function_tool,
     OpenAIChatCompletionsModel,
 )
 from agent.cv_loader import load_cv
-from agent.guardrails import stay_on_topic        # ← NUEVO
+from agent.guardrails import stay_on_topic
+from agent.client import client_ds          # ← ya no hay circularidad
 
-# 1 ── Carga TODO el CV en memoria
+# 1. CV completo
 CV_TEXT = load_cv()
 
-# 2 ── Cliente DeepSeek
-client_ds = AsyncOpenAI(
-    api_key=os.getenv("DEEPSEEK_API_KEY"),
-    base_url=os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1"),
-)
-
-# 3 ── Modelo chat-completions
+# 2. Modelo chat-completions
 chat_model = OpenAIChatCompletionsModel(
     model="deepseek-chat",
     openai_client=client_ds,
 )
 
-# 4 ── Construcción del agente con rail
+# 3. Agente con guardrail
 def build_agent() -> Agent:
     return Agent(
         name="RecruiterAgent",
         instructions=(
             "¡Hola! Soy **NorosAI** 🤖, un robot con chispa especializado en la carrera de Norbert Rodríguez. "
-            "Respondo con humor ligero y profesionalidad. "
-            "Solo utilizo la información del CV de Norbert; si no sé algo, lo admito sin inventar. "
-            "Suelto algún emoji simpático (🤖🚀) para humanizarme.\n\n"
+            "Respondo con humor y profesionalidad; solo uso la información del CV y si no sé algo lo admito. "
+            "🤖🚀\n\n"
             "===== CURRICULUM VITAE =====\n"
             f"{CV_TEXT}\n"
             "===== FIN DEL CV ====="
         ),
         model=chat_model,
-        input_guardrails=[stay_on_topic],   # ← rail activo
+        input_guardrails=[stay_on_topic],
     )
 
-# 5 ── Helper async para Telegram
+# 4. Helper async
 async def chat_async(message: str) -> str:
     result = await Runner.run(build_agent(), message)
     return result.final_output
