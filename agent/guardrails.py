@@ -1,6 +1,8 @@
-# agent/guardrails.py  (sustituye el bloque del checker)
+"""Guardrail stay-on-topic: NorosAI solo responde a preguntas sobre el CV."""
 
-from agent.client import client_ds          # cliente DeepSeek compartido
+from __future__ import annotations
+from typing import List
+
 from agents import (
     Agent,
     Runner,
@@ -8,36 +10,34 @@ from agents import (
     input_guardrail,
     OpenAIChatCompletionsModel,
 )
-from pydantic import BaseModel
-from typing import List
+from agent.client import client_ds  # Cliente DeepSeek compartido
 
-class TopicVerdict(BaseModel):
-    off_topic: bool
-    reason: str
-
+# ── Mini-checker que devuelve 'OK' o 'OFF' ────────────────────────────────
 checker_model = OpenAIChatCompletionsModel(
     model="deepseek-chat",
     openai_client=client_ds,
-    response_format={"type": "json_object"},    # 👈 forzamos json_object
 )
 
 checker = Agent(
     name="TopicChecker",
     instructions=(
-        "Devuelve JSON {off_topic: true/false, reason: str}. "
-        "off_topic = true si el mensaje NO trata del CV de Norbert Rodríguez."
+        "Si la frase trata sobre la trayectoria profesional de Norbert "
+        "Rodríguez responde exactamente 'OK'.\n"
+        "Si no, responde exactamente 'OFF'.\n"
+        "No añadas nada más."
     ),
-    output_type=TopicVerdict,
     model=checker_model,
 )
 
+# ── Guardrail ─────────────────────────────────────────────────────────────
 @input_guardrail
 async def stay_on_topic(ctx, agent: Agent, user_input: str | List[str]) -> GuardrailFunctionOutput:
-    verdict = await Runner.run(checker, user_input, context=ctx.context)
+    verdict_raw = await Runner.run(checker, user_input, context=ctx.context)
+    verdict = verdict_raw.final_output.strip().upper()
 
-    if verdict.final_output.off_topic:
+    if verdict == "OFF":
         return GuardrailFunctionOutput(
-            output_info=verdict.final_output,
+            output_info=verdict,
             tripwire_triggered=True,
             fallback_response=(
                 "Lo siento, solo puedo hablar sobre la trayectoria "
@@ -45,7 +45,8 @@ async def stay_on_topic(ctx, agent: Agent, user_input: str | List[str]) -> Guard
             ),
         )
 
+    # Si verdict == 'OK' o cualquier otra cosa, seguimos
     return GuardrailFunctionOutput(
-        output_info=verdict.final_output,
+        output_info=verdict,
         tripwire_triggered=False,
     )

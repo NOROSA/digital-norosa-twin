@@ -8,6 +8,7 @@ from agents import (
 )
 from agent.cv_loader import load_cv
 from agent.guardrails import stay_on_topic
+
 from agent.client import client_ds          # ← ya no hay circularidad
 
 # 1. CV completo
