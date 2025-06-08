@@ -1,4 +1,8 @@
-"""Guardrail stay-on-topic: NorosAI solo responde a preguntas sobre el CV."""
+"""
+Guardrail stay-on-topic:
+   - Detecta mensajes que NO tratan del CV de Norbert
+   - Si se salen de tema, devuelve un mensaje estándar.
+"""
 
 from __future__ import annotations
 from typing import List
@@ -10,9 +14,9 @@ from agents import (
     input_guardrail,
     OpenAIChatCompletionsModel,
 )
-from agent.client import client_ds  # Cliente DeepSeek compartido
+from agent.client import client_ds   # cliente DeepSeek
 
-# ── Mini-checker que devuelve 'OK' o 'OFF' ────────────────────────────────
+# ── mini-checker que responde “OK” o “OFF” ────────────────────────────────
 checker_model = OpenAIChatCompletionsModel(
     model="deepseek-chat",
     openai_client=client_ds,
@@ -21,15 +25,15 @@ checker_model = OpenAIChatCompletionsModel(
 checker = Agent(
     name="TopicChecker",
     instructions=(
-        "Si la frase trata sobre la trayectoria profesional de Norbert "
-        "Rodríguez responde exactamente 'OK'.\n"
-        "Si no, responde exactamente 'OFF'.\n"
-        "No añadas nada más."
+        "Responde únicamente 'OK' si la entrada SE RELACIONA con la "
+        "trayectoria profesional de Norbert Rodríguez.\n"
+        "Responde únicamente 'OFF' si no está relacionada."
     ),
     model=checker_model,
 )
 
-# ── Guardrail ─────────────────────────────────────────────────────────────
+
+# ── guardrail propiamente dicho ────────────────────────────────────────────
 @input_guardrail
 async def stay_on_topic(ctx, agent: Agent, user_input: str | List[str]) -> GuardrailFunctionOutput:
     verdict_raw = await Runner.run(checker, user_input, context=ctx.context)
@@ -37,16 +41,16 @@ async def stay_on_topic(ctx, agent: Agent, user_input: str | List[str]) -> Guard
 
     if verdict == "OFF":
         return GuardrailFunctionOutput(
-            output_info=verdict,
+            output_info="OFF",
             tripwire_triggered=True,
-            fallback_response=(
+            assistant_response=(
                 "Lo siento, solo puedo hablar sobre la trayectoria "
                 "profesional de Norbert Rodríguez 🤖🚀"
             ),
         )
 
-    # Si verdict == 'OK' o cualquier otra cosa, seguimos
+    # Si verdict == 'OK' -> continúa flujo normal
     return GuardrailFunctionOutput(
-        output_info=verdict,
+        output_info="OK",
         tripwire_triggered=False,
     )
