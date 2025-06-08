@@ -1,8 +1,4 @@
-"""
-Guardrail stay-on-topic:
-   - Detecta mensajes que NO tratan del CV de Norbert
-   - Si se salen de tema, devuelve un mensaje estándar.
-"""
+"""Guardrail: impide que NorosAI hable de temas fuera del CV de Norbert."""
 
 from __future__ import annotations
 from typing import List
@@ -14,9 +10,10 @@ from agents import (
     input_guardrail,
     OpenAIChatCompletionsModel,
 )
-from agent.client import client_ds   # cliente DeepSeek
+from agent.client import client_ds  # cliente DeepSeek compartido
 
-# ── mini-checker que responde “OK” o “OFF” ────────────────────────────────
+
+# ── 1. Mini-checker “OK / OFF” ───────────────────────────────────────────
 checker_model = OpenAIChatCompletionsModel(
     model="deepseek-chat",
     openai_client=client_ds,
@@ -25,15 +22,15 @@ checker_model = OpenAIChatCompletionsModel(
 checker = Agent(
     name="TopicChecker",
     instructions=(
-        "Responde únicamente 'OK' si la entrada SE RELACIONA con la "
-        "trayectoria profesional de Norbert Rodríguez.\n"
-        "Responde únicamente 'OFF' si no está relacionada."
+        "Responde SOLO «OK» si el mensaje trata de la trayectoria "
+        "profesional de Norbert Rodríguez.\n"
+        "Responde SOLO «OFF» en cualquier otro caso."
     ),
     model=checker_model,
 )
 
 
-# ── guardrail propiamente dicho ────────────────────────────────────────────
+# ── 2. Guardrail propiamente dicho ───────────────────────────────────────
 @input_guardrail
 async def stay_on_topic(ctx, agent: Agent, user_input: str | List[str]) -> GuardrailFunctionOutput:
     verdict_raw = await Runner.run(checker, user_input, context=ctx.context)
@@ -43,13 +40,12 @@ async def stay_on_topic(ctx, agent: Agent, user_input: str | List[str]) -> Guard
         return GuardrailFunctionOutput(
             output_info="OFF",
             tripwire_triggered=True,
-            assistant_response=(
+            assistant_response_override=(
                 "Lo siento, solo puedo hablar sobre la trayectoria "
                 "profesional de Norbert Rodríguez 🤖🚀"
             ),
         )
 
-    # Si verdict == 'OK' -> continúa flujo normal
     return GuardrailFunctionOutput(
         output_info="OK",
         tripwire_triggered=False,
