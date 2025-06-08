@@ -1,11 +1,6 @@
-"""
-Guardrail stay-on-topic: bloquea mensajes que no traten del CV de Norbert.
-"""
+# agent/guardrails.py  (sustituye el bloque del checker)
 
-from __future__ import annotations
-from typing import List
-
-from pydantic import BaseModel
+from agent.client import client_ds          # cliente DeepSeek compartido
 from agents import (
     Agent,
     Runner,
@@ -13,10 +8,9 @@ from agents import (
     input_guardrail,
     OpenAIChatCompletionsModel,
 )
+from pydantic import BaseModel
+from typing import List
 
-from agent.client import client_ds  # ← importa SIN circularidad
-
-# ── Mini-checker ───────────────────────────────────────────────────────────
 class TopicVerdict(BaseModel):
     off_topic: bool
     reason: str
@@ -24,6 +18,7 @@ class TopicVerdict(BaseModel):
 checker_model = OpenAIChatCompletionsModel(
     model="deepseek-chat",
     openai_client=client_ds,
+    response_format={"type": "json_object"},    # 👈 forzamos json_object
 )
 
 checker = Agent(
@@ -36,7 +31,6 @@ checker = Agent(
     model=checker_model,
 )
 
-# ── Guardrail ──────────────────────────────────────────────────────────────
 @input_guardrail
 async def stay_on_topic(ctx, agent: Agent, user_input: str | List[str]) -> GuardrailFunctionOutput:
     verdict = await Runner.run(checker, user_input, context=ctx.context)
